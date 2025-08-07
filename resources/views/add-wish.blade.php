@@ -1,273 +1,176 @@
-<x-layout>
+@extends('components.layout')
 
-  <div class="container py-md-5 container--narrow">
-    <form action="{{ isset($wish) ? '/wish/' . $wish->id : '/add-wish' }}" method="POST" enctype="multipart/form-data">
-        @csrf
-        @if(isset($wish))
-            @method('POST') {{-- Laravel uses POST for form submissions, but we can spoof PUT/PATCH --}}
-        @endif
-      <div class="form-group">
-        <label for="product-title" class="text-muted mb-1"><small>Naziv izdelka</small></label>
-        <input value="{{old('itemname', $wish->itemname ?? '')}}" name="itemname" id="post-title" class="form-control form-control-lg form-control-title" type="text" placeholder="" autocomplete="off" />
-        @error('itemname')
-          <p class="m-0 small alert alert-danger shadow-sm">{{$message}}</p>
-        @enderror
-      </div>
+@section('content')
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white shadow-md rounded-lg p-4 md:p-8">
+        <h1 class="text-2xl font-bold mb-6 text-gray-800">{{ isset($wish) ? 'Uredi željo' : 'Dodaj novo željo' }}</h1>
+        <form action="{{ isset($wish) ? '/wish/' . $wish->id : '/add-wish' }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            @if(isset($wish))
+                @method('PUT')
+            @endif
 
-      <div class="form-group">
-        <label for="product-url" class="text-muted mb-1"><small>Spletni naslov izdelka (url)</small></label>
-        <input value="{{old('url', $wish->url ?? '')}}" name="url" id="post-url" class="form-control form-control-lg form-control-title" type="text" placeholder="https://" autocomplete="off" />
-        @error('url')
-        <p class="m-0 small alert alert-danger shadow-sm">{{$message}}</p>
-      @enderror
-      </div>
-      <div id="url-scrape-status" style="margin-bottom:10px;">
-        <span id="url-loading" style="display:none;">🔄 Fetching product info...</span>
-        <span id="url-error" class="small alert alert-danger shadow-sm" style="display:none;"></span>
-      </div>
+          <div class="mb-4">
+            <label for="product-url" class="block text-gray-700 text-sm font-bold mb-2">Spletni naslov izdelka (url)</label>
+            <input value="{{old('url', $wish->url ?? '')}}" name="url" id="post-url" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" placeholder="https://" autocomplete="off" />
+            @error('url')
+            <p class="text-red-500 text-xs italic mt-2">{{$message}}</p>
+          @enderror
+          </div>
+          <div id="url-scrape-status" class="mb-4 h-4">
+            <span id="url-loading" class="text-sm text-gray-600" style="display:none;">🔄 Pridobivam podatke o izdelku...</span>
+            <span id="url-error" class="text-red-500 text-xs italic" style="display:none;"></span>
+          </div>
 
-      <div class="form-group">
-        <label for="price" class="text-muted mb-1"><small>Price</small></label>
-        <div class="input-group">
-          <input value="{{ old('price', $wish->price ?? '') }}" name="price" id="price" class="form-control" type="number" step="0.01" min="0" placeholder="0.00" />
-          <!-- Currency selection removed: default is now EUR -->
-        </div>
-        @error('price')
-          <p class="m-0 small alert alert-danger shadow-sm">{{$message}}</p>
-        @enderror
-        <!-- Currency error removed -->
-      </div>
+          <div class="mb-4">
+            <label for="product-title" class="block text-gray-700 text-sm font-bold mb-2">Naziv izdelka</label>
+            <input value="{{old('itemname', $wish->itemname ?? '')}}" name="itemname" id="post-title" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" placeholder="" autocomplete="off" />
+            @error('itemname')
+              <p class="text-red-500 text-xs italic mt-2">{{$message}}</p>
+            @enderror
+          </div>
 
-      <div class="form-group">
-        <label for="description" class="text-muted mb-1"><small>Short Description</small></label>
-        <textarea name="description" id="description" class="form-control" maxlength="500" rows="3" oninput="updateCharCount()" style="resize: vertical;">{{ old('description', $wish->description ?? '') }}</textarea>
-        <div class="text-muted small">
-          <span id="desc-char-count">0</span>/500 characters
-        </div>
-        @error('description')
-          <p class="m-0 small alert alert-danger shadow-sm">{{$message}}</p>
-        @enderror
-      </div>
+          <div class="mb-4">
+            <label for="price" class="block text-gray-700 text-sm font-bold mb-2">Cena</label>
+            <div class="relative">
+              <input value="{{ old('price', $wish->price ?? '') }}" name="price" id="price" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="number" step="0.01" min="0" placeholder="0.00" />
+            </div>
+            @error('price')
+              <p class="text-red-500 text-xs italic mt-2">{{$message}}</p>
+            @enderror
+          </div>
 
-      <div class="form-group">
-        <label for="product-photo" class="text-muted mb-1"><small>Product Photo</small></label>
-        <input type="file" name="image_file" id="product-photo" class="form-control-file" accept="image/jpeg,image/png" onchange="validateAndPreviewImage(event)">
-        <div id="photo-error" class="m-0 small alert alert-danger shadow-sm" style="display:none;"></div>
-        <div id="photo-preview" style="margin-top:10px;"></div>
-        <div id="scraped-image-url-display" class="text-muted small mt-1" style="display:none;"></div>
-        @error('product_photo')
-          <p class="m-0 small alert alert-danger shadow-sm">{{$message}}</p>
-        @enderror
-      </div>
+          <div class="mb-4">
+            <label for="description" class="block text-gray-700 text-sm font-bold mb-2">Kratek opis</label>
+            <textarea name="description" id="description" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-32 resize-y" maxlength="500" oninput="updateCharCount()">{{ old('description', $wish->description ?? '') }}</textarea>
+            <div class="text-gray-600 text-xs mt-1 text-right">
+              <span id="desc-char-count">0</span>/500 znakov
+            </div>
+            @error('description')
+              <p class="text-red-500 text-xs italic mt-2">{{$message}}</p>
+            @enderror
+          </div>
 
-      <button class="btn btn-primary">{{ isset($wish) ? 'Update Izdelek' : 'Dodaj izelek' }}</button>
-    </form>
-  </div>
+          <div class="mb-4">
+            <label for="product-photo" class="block text-gray-700 text-sm font-bold mb-2">Slika izdelka</label>
+            <input type="file" name="image_file" id="product-photo" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" accept="image/jpeg,image/png" onchange="validateAndPreviewImage(event)">
+            <div id="photo-error" class="text-red-500 text-xs italic mt-2" style="display:none;"></div>
+            <div id="photo-preview" class="mt-4"></div>
+            <div id="scraped-image-url-display" class="text-gray-600 text-xs mt-1" style="display:none;"></div>
+            @error('product_photo')
+              <p class="text-red-500 text-xs italic mt-2">{{$message}}</p>
+            @enderror
+          </div>
 
-    <script>
-      // Description character counter
-      function updateCharCount() {
-        var textarea = document.getElementById('description');
-        var counter = document.getElementById('desc-char-count');
-        counter.textContent = textarea.value.length;
-      }
-      // Initialize counter on page load (for old input)
-      document.addEventListener('DOMContentLoaded', function() {
-        updateCharCount();
+          <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">{{ isset($wish) ? 'Posodobi izdelek' : 'Dodaj izdelek' }}</button>
+        </form>
+    </div>
+</div>
+
+<script>
+  // Description character counter
+  function updateCharCount() {
+    var textarea = document.getElementById('description');
+    var counter = document.getElementById('desc-char-count');
+    counter.textContent = textarea.value.length;
+  }
+  // Initialize counter on page load (for old input)
+  document.addEventListener('DOMContentLoaded', function() {
+    updateCharCount();
+  });
+
+  // Product photo validation and preview
+  function validateAndPreviewImage(event) {
+    var fileInput = event.target;
+    var file = fileInput.files[0];
+    var errorDiv = document.getElementById('photo-error');
+    var previewDiv = document.getElementById('photo-preview');
+    var scrapedImageUrlDisplay = document.getElementById('scraped-image-url-display');
+    errorDiv.style.display = 'none';
+    errorDiv.textContent = '';
+    previewDiv.innerHTML = '';
+    if (scrapedImageUrlDisplay) { 
+        scrapedImageUrlDisplay.style.display = 'none'; 
+    }
+
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      errorDiv.textContent = 'Dovoljeni sta samo JPEG ali PNG sliki.';
+      errorDiv.style.display = 'block';
+      fileInput.value = '';
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      errorDiv.textContent = 'Slika mora biti manjša od 1MB.';
+      errorDiv.style.display = 'block';
+      fileInput.value = '';
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = document.createElement('img');
+      img.src = e.target.result;
+      img.className = 'w-32 h-32 object-cover rounded';
+      previewDiv.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // URL scraping functionality
+  let urlInput = document.getElementById('post-url');
+  let urlLoading = document.getElementById('url-loading');
+  let urlError = document.getElementById('url-error');
+  let priceInput = document.getElementById('price');
+  let titleInput = document.getElementById('post-title');
+  let descriptionInput = document.getElementById('description');
+  let scrapedImageUrlDisplay = document.getElementById('scraped-image-url-display');
+
+  urlInput.addEventListener('blur', async function() {
+    let url = urlInput.value.trim();
+    if (!url) return;
+
+    urlLoading.style.display = 'inline';
+    urlError.style.display = 'none';
+
+    try {
+      let response = await fetch('/api/scrape-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ url: url })
       });
 
-      // Product photo validation and preview
-      function validateAndPreviewImage(event) {
-        var fileInput = event.target;
-        var file = fileInput.files[0];
-        var errorDiv = document.getElementById('photo-error');
-        var previewDiv = document.getElementById('photo-preview');
-        var scrapedImageUrlDisplay = document.getElementById('scraped-image-url-display');
-        errorDiv.style.display = 'none';
-        errorDiv.textContent = '';
-        previewDiv.innerHTML = '';
-        if (scrapedImageUrlDisplay) { // Check if element exists before trying to hide
-            scrapedImageUrlDisplay.style.display = 'none'; // Hide scraped URL when new file is selected
-        }
-
-        if (!file) return;
-
-        // Validate type
-        if (!['image/jpeg', 'image/png'].includes(file.type)) {
-          errorDiv.textContent = 'Only JPEG or PNG images are allowed.';
-          errorDiv.style.display = 'block';
-          fileInput.value = '';
-          return;
-        }
-        // Validate size (<1MB)
-        if (file.size > 1024 * 1024) {
-          errorDiv.textContent = 'Image must be less than 1MB.';
-          errorDiv.style.display = 'block';
-          fileInput.value = '';
-          return;
-        }
-        // Show thumbnail preview
-        var reader = new FileReader();
-        reader.onload = function(e) {
-          var img = document.createElement('img');
-          img.src = e.target.result;
-          img.style.maxWidth = '150px';
-          img.style.maxHeight = '150px';
-          img.alt = 'Product Photo Preview';
-          img.className = 'img-thumbnail mt-2';
-          previewDiv.appendChild(img);
-        };
-        reader.readAsDataURL(file);
+      if (!response.ok) {
+        throw new Error('Neuspešno pridobivanje podatkov o izdelku.');
       }
-    </script>
-    <script>
-      // --- Metadata Scraper Integration ---
-      (function() {
-        const urlInput = document.getElementById('post-url');
-        const titleInput = document.getElementById('post-title');
-        const descInput = document.getElementById('description');
-        const photoPreviewDiv = document.getElementById('photo-preview');
-        const photoInput = document.getElementById('product-photo');
-        const loadingSpan = document.getElementById('url-loading');
-        const errorSpan = document.getElementById('url-error');
-        let scrapeTimeout = null;
-        let lastScrapedUrl = '';
 
-        function showLoading(show) {
-          loadingSpan.style.display = show ? 'inline' : 'none';
-        }
-        function showError(msg) {
-          if (msg) {
-            errorSpan.textContent = msg;
-            errorSpan.style.display = 'inline-block';
-          } else {
-            errorSpan.textContent = '';
-            errorSpan.style.display = 'none';
-          }
-        }
-        function setImagePreview(imageUrl) {
-          console.log('[setImagePreview] Called with:', imageUrl);
-          if (!imageUrl) {
-            console.log('[setImagePreview] No imageUrl provided, aborting.');
-            return;
-          }
-          // Clear file input and preview
-          if (photoInput) photoInput.value = '';
-          photoPreviewDiv.innerHTML = '';
-          const img = document.createElement('img');
-          img.src = imageUrl;
-          img.style.maxWidth = '150px';
-          img.style.maxHeight = '150px';
-          img.alt = 'Product Photo Preview';
-          img.className = 'img-thumbnail mt-2';
-          photoPreviewDiv.appendChild(img);
+      let data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
-          // Display the scraped image URL
-          const scrapedImageUrlDisplay = document.getElementById('scraped-image-url-display');
-          scrapedImageUrlDisplay.textContent = 'Scraped Image URL: ' + imageUrl;
-          scrapedImageUrlDisplay.style.display = 'block';
+      if (!titleInput.value.trim()) titleInput.value = data.title || '';
+      if (!priceInput.value.trim() && data.price) {
+        let price = parseFloat(data.price.replace(/[^0-9.-]+/g, ''));
+        priceInput.value = price || '';
+      }
+      if (!descriptionInput.value.trim()) descriptionInput.value = data.description || '';
+      updateCharCount(); // Update character count after setting description
 
-          // Add a hidden input to retain the image_url if no new file is uploaded
-          const hiddenInput = document.createElement('input');
-          hiddenInput.type = 'hidden';
-          hiddenInput.name = 'image_url';
-          hiddenInput.value = imageUrl;
-          photoPreviewDiv.appendChild(hiddenInput);
+      if (data.image) {
+        scrapedImageUrlDisplay.textContent = 'Predlagana slika: ' + data.image;
+        scrapedImageUrlDisplay.style.display = 'block';
+      }
 
-          // Log DOM state for debugging
-          console.log('[setImagePreview] photoPreviewDiv.innerHTML:', photoPreviewDiv.innerHTML);
-          console.log('[setImagePreview] scrapedImageUrlDisplay.textContent:', scrapedImageUrlDisplay.textContent);
-        }
-
-        function scrapeUrl(url) {
-          if (!url || url === lastScrapedUrl) return;
-          showError('');
-          showLoading(true);
-          fetch('/api/scrape-url', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-            },
-            body: JSON.stringify({ url: url })
-          })
-          .then(async resp => {
-            showLoading(false);
-            if (!resp.ok) {
-              let msg = 'Failed to fetch product info.';
-              try {
-                const data = await resp.json();
-                if (data && data.message) msg = data.message;
-              } catch {}
-              throw new Error(msg);
-            }
-            return resp.json();
-          })
-          .then(data => {
-            lastScrapedUrl = url;
-            if (data.title && titleInput) titleInput.value = data.title;
-            if (data.description && descInput) descInput.value = data.description;
-
-            // Debug: log scraped data
-            console.log('[scrapeUrl] Scraped data:', data);
-
-            // Handle image URL for preview (use image_url property)
-            if (data.image_url) {
-                let imageUrlForPreview = data.image_url;
-                if (imageUrlForPreview.startsWith('/i/')) {
-                    imageUrlForPreview = 'https://www.mimovrste.com' + imageUrlForPreview;
-                }
-                // Only set preview if it's a valid absolute URL now
-                if (imageUrlForPreview.startsWith('http')) {
-                    console.log('[scrapeUrl] Setting image preview with:', imageUrlForPreview);
-                    setImagePreview(imageUrlForPreview);
-                } else {
-                    console.log('[scrapeUrl] Image URL not valid for preview:', imageUrlForPreview);
-                }
-            } else {
-                console.log('[scrapeUrl] No image_url in scraped data.');
-            }
-
-            // Populate price and currency if available
-            if (data.price && priceInput) priceInput.value = data.price;
-            // Currency is always EUR now; no need to set currencySelect
-          })
-          .catch(err => {
-            showError(err.message || 'Could not fetch product info.');
-          })
-          .finally(() => {
-            showLoading(false);
-          });
-        }
-
-        // Debounced handler for blur and input
-        function handleUrlInput() {
-          if (scrapeTimeout) clearTimeout(scrapeTimeout);
-          scrapeTimeout = setTimeout(() => {
-            const url = urlInput.value.trim();
-            if (url && /^https?:\/\//i.test(url)) {
-              scrapeUrl(url);
-            }
-          }, 400);
-        }
-
-        if (urlInput) {
-          urlInput.addEventListener('blur', handleUrlInput);
-          urlInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') handleUrlInput();
-          });
-        }
-        // Initial population of fields if a wish object is present (for edit mode)
-        @if(isset($wish))
-          titleInput.value = "{{ $wish->itemname ?? '' }}";
-          urlInput.value = "{{ $wish->url ?? '' }}";
-          descInput.value = "{{ $wish->description ?? '' }}";
-          priceInput.value = "{{ $wish->price ?? '' }}";
-          // currencySelect removed; currency is always EUR
-          @if($wish->image_url)
-            setImagePreview("{{ asset('storage/' . $wish->image_url) }}");
-          @endif
-        @endif
-      })();
-    </script>
-</x-layout>
+    } catch (err) {
+      urlError.textContent = err.message || 'Napaka pri pridobivanju podatkov.';
+      urlError.style.display = 'block';
+    } finally {
+        urlLoading.style.display = 'none';
+    }
+  });
+</script>
+@endsection

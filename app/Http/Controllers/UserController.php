@@ -9,8 +9,40 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller {
 
+    public function showLoginForm() {
+        return view('login');
+    }
+
+    public function showRegisterForm() {
+        return view('register');
+    }
+
     public function showProfileForm() {
         return view('profile-form');
+    }
+
+    public function updateProfile(Request $request) {
+        $user = auth()->user();
+        
+        $incomingFields = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+            'username' => ['required', 'string', 'min:3', 'max:20', Rule::unique('users', 'username')->ignore($user->id)],
+            'address' => ['nullable', 'string', 'max:500'],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048']
+        ]);
+
+        // Handle avatar upload if provided
+        if ($request->hasFile('avatar')) {
+            // Store the avatar file
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $incomingFields['avatar'] = $avatarPath;
+        }
+
+        // Update user profile
+        $user->update($incomingFields);
+
+        return redirect()->route('profile.show', $user)->with('success', 'Profile updated successfully!');
     }
 
     public function profile(User $user) {
@@ -65,7 +97,11 @@ class UserController extends Controller {
 
             } else {
 
-                return view('homepage-feed');
+                // For now, provide empty collections until activity system is implemented
+                $activities = collect([]);
+                $upcomingExchanges = collect([]);
+                
+                return view('homepage-feed', compact('activities', 'upcomingExchanges'));
 
             }
         

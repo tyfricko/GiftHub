@@ -19,9 +19,13 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
+        'fullname',
+        'surname',
         'username',
         'email',
         'password',
+        'address',
+        'avatar',
     ];
 
     /**
@@ -43,6 +47,18 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    // Accessor for name attribute (combines fullname and surname)
+    public function getNameAttribute() {
+        return trim($this->fullname . ' ' . $this->surname);
+    }
+
+    // Mutator for name attribute (splits into fullname and surname)
+    public function setNameAttribute($value) {
+        $parts = explode(' ', $value, 2);
+        $this->attributes['fullname'] = $parts[0] ?? '';
+        $this->attributes['surname'] = $parts[1] ?? '';
+    }
 
     public function wishes() {
         return $this->hasMany(Wishlist::class, 'user_id');

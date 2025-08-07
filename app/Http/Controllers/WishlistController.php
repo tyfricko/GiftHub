@@ -16,6 +16,18 @@ class WishlistController extends Controller
         return view('add-wish');
     }
 
+    /**
+     * Display the current user's wishlist items.
+     */
+    public function index()
+    {
+        $wishlists = auth()->user()->wishes()->latest()->get();
+        return view('profile-wishlist', [
+            'wishes' => $wishlists,  // Change key to match what the view expects
+            'username' => auth()->user()->username
+        ]);
+    }
+
     public function storeNewWish(Request $request) {
         $incomingFields = $request->validate([
             'itemname' => 'required|string',
@@ -282,12 +294,8 @@ class WishlistController extends Controller
     /**
      * Show the form for editing the specified wish.
      */
-    public function edit($id)
+    public function edit(Wishlist $wish)
     {
-        $wish = \App\Models\Wishlist::find($id);
-        if (!$wish) {
-            abort(404, 'Wish not found.');
-        }
         if ($wish->user_id !== auth()->id()) {
             abort(403, 'You are not authorized to edit this wish.');
         }

@@ -21,3 +21,15 @@ Route::post('/scrape-url', [\App\Http\Controllers\WishlistController::class, 'sc
 
 Route::middleware('auth:sanctum')->patch('/wishlist/{id}', [\App\Http\Controllers\WishlistController::class, 'update']);
 Route::middleware('web')->delete('/wishlist/{id}', [\App\Http\Controllers\WishlistController::class, 'destroy']);
+
+// Gift Exchange Feature API Routes
+use App\Http\Controllers\GiftExchangeController;
+
+Route::prefix('gift-exchange')->group(function () {
+    Route::post('/events', [GiftExchangeController::class, 'createEvent']);
+    Route::post('/events/{eventId}/invite', [GiftExchangeController::class, 'inviteParticipants']);
+    Route::post('/invitations/{token}/respond', [GiftExchangeController::class, 'respondToInvitation']);
+    Route::get('/events/{eventId}/participants', [GiftExchangeController::class, 'getParticipants']);
+    Route::post('/events/{eventId}/assign', [GiftExchangeController::class, 'assignGifts']);
+    Route::get('/events/{eventId}/assignments', [GiftExchangeController::class, 'getAssignments']);
+});

@@ -1,67 +1,58 @@
-<x-layout>
+@extends('components.layout')
 
-    <div class="container py-md-5">
-      <div class="row align-items-center">
-        <div class="col-lg-7 py-3 py-md-5">
-          <h1 class="display-3">GiftHub: Darila, ki Povezujejo</h1>
-          <p class="lead text-muted">Odkrijte veselje ob darovanju z GiftHub platformo, oblikovano za nemoteno in prijetno izmenjavo daril v poslovnem okolju. Okrepite vezi in vzbudite duh ekipe s premišljenimi presenečenji.</p>
-        </div>
-        <div class="col-lg-5 pl-lg-5 pb-3 py-lg-5">
-          <form action="/register" method="POST" id="registration-form">
-            @csrf
-            <!--
-            <div class="form-group">
-              <label for="fullname-register" class="text-muted mb-1"><small>Ime</small></label>
-              <input value="{{old('fullname')}}" name="fullname" id="fullname-register" class="form-control" type="text" placeholder="Vpišite vaše ime" autocomplete="off" />
-            </div>
+@section('content')
+<main class="container mx-auto px-6 py-12">
+  <!-- Hero Section -->
+  <section class="text-center max-w-3xl mx-auto mb-16">
+    <h1 class="text-display font-extrabold mb-4 text-neutral-gray">Simplify Your Gift-Giving</h1>
+    <p class="text-body text-neutral-gray mb-8">
+      Organize Secret Santa exchanges, create shareable wishlists, and make every occasion special.
+    </p>
+    <x-ui.button variant="primary" size="lg" href="/register">
+      Get Started for Free
+    </x-ui.button>
+  </section>
 
-            <div class="form-group">
-              <label for="surname-register" class="text-muted mb-1"><small>Priimek</small></label>
-              <input value="{{old('surname')}}" name="surname" id="surname-register" class="form-control" type="text" placeholder="Vpišite vaš priimek" autocomplete="off" />
-            </div>
-
-            <div class="form-group">
-              <label for="address-register" class="text-muted mb-1"><small>Naslov</small></label>
-              <input value="{{old('address')}}" name="address" id="address-register" class="form-control" type="text" placeholder="Moj naslov 22, 1000 Ljubljana " autocomplete="off" />
-            </div>
-          -->
-
-            <div class="form-group">
-              <label for="username-register" class="text-muted mb-1"><small>Uporabniško ime</small></label>
-              <input value="{{old('username')}}" name="username" id="username-register" class="form-control" type="text" placeholder="Izberite uporabniško ime" autocomplete="off" />
-              @error('username')
-                  <p class="m-0 small alert alert-danger shadow-sm">{{$message}}</p>
-              @enderror
-            </div>
-
-            <div class="form-group">
-              <label for="email-register" class="text-muted mb-1"><small>Email</small></label>
-              <input value="{{old('email')}}" name="email" id="email-register" class="form-control" type="text" placeholder="mojemail@gmail.com" autocomplete="off" />
-              @error('email')
-              <p class="m-0 small alert alert-danger shadow-sm">{{$message}}</p>
-              @enderror
-            </div>
-
-            <div class="form-group">
-              <label for="password-register" class="text-muted mb-1"><small>Geslo</small></label>
-              <input name="password" id="password-register" class="form-control" type="password" placeholder="Ustvarite geslo" />
-              @error('password')
-              <p class="m-0 small alert alert-danger shadow-sm">{{$message}}</p>
-              @enderror
-            </div>
-
-            <div class="form-group">
-              <label for="password-register-confirm" class="text-muted mb-1"><small>Ponovite geslo</small></label>
-              <input name="password_confirmation" id="password-register-confirm" class="form-control" type="password" placeholder="Potrdite geslo" />
-              @error('password_confirmation')
-              <p class="m-0 small alert alert-danger shadow-sm">{{$message}}</p>
-              @enderror
-            </div>
-
-            <button type="submit" class="py-3 mt-4 btn btn-lg btn-success btn-block">Prijavite se in širite veselje</button>
-          </form>
-        </div>
-      </div>
+  <!-- How It Works Section -->
+  <section class="max-w-5xl mx-auto mb-16">
+    <h2 class="text-headline font-bold text-neutral-gray mb-8 text-center">How It Works</h2>
+    <div class="flex flex-col md:flex-row justify-center gap-8">
+      <x-ui.card class="flex-1 text-center">
+        <div class="text-5xl mb-4">🎁</div>
+        <h3 class="text-xl font-semibold mb-2">Create Wishlists</h3>
+        <p class="text-neutral-gray">Add gifts from any store.</p>
+      </x-ui.card>
+      <x-ui.card class="flex-1 text-center">
+        <div class="text-5xl mb-4">🧑‍🤝‍🧑</div>
+        <h3 class="text-xl font-semibold mb-2">Run Secret Santa</h3>
+        <p class="text-neutral-gray">Invite people, draw names, notify everyone.</p>
+      </x-ui.card>
+      <x-ui.card class="flex-1 text-center">
+        <div class="text-5xl mb-4">🎉</div>
+        <h3 class="text-xl font-semibold mb-2">Stress-Free Fun</h3>
+        <p class="text-neutral-gray">No more guessing or duplicate gifts.</p>
+      </x-ui.card>
     </div>
+  </section>
 
-  </x-layout>
+  <!-- Call to Action Section -->
+  <section class="text-center max-w-3xl mx-auto mb-16">
+    <h2 class="text-headline font-semibold mb-4">Ready to make gifting easy?</h2>
+    <x-ui.button variant="primary" size="lg" href="/register">
+      Create an Account
+    </x-ui.button>
+  </section>
+</main>
+
+<footer class="bg-neutral-light py-6 mt-auto">
+  <div class="container mx-auto px-6 text-center text-neutral-gray text-sm space-x-4">
+    <a href="/about" class="hover:underline">About</a>
+    <a href="/contact" class="hover:underline">Contact</a>
+    <a href="/privacy" class="hover:underline">Privacy Policy</a>
+    <a href="/terms" class="hover:underline">Terms of Service</a>
+  </div>
+  <div class="container mx-auto px-6 text-center text-neutral-gray text-xs mt-2">
+    © 2025 GiftHub. All rights reserved.
+  </div>
+</footer>
+@endsection
