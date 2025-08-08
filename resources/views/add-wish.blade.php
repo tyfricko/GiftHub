@@ -10,13 +10,73 @@
                 @method('PUT')
             @endif
 
-          <div class="mb-4">
-            <label for="product-url" class="block text-gray-700 text-sm font-bold mb-2">Spletni naslov izdelka (url)</label>
-            <input value="{{old('url', $wish->url ?? '')}}" name="url" id="post-url" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" placeholder="https://" autocomplete="off" />
-            @error('url')
-            <p class="text-red-500 text-xs italic mt-2">{{$message}}</p>
-          @enderror
-          </div>
+            @if(request()->has('wishlist_id'))
+                <input type="hidden" name="wishlist_id" value="{{ request('wishlist_id') }}">
+            @endif
+
+            <!-- Wishlist Selection Field -->
+            <div class="mb-4">
+                <label for="user_wishlist_ids" class="block text-gray-700 text-sm font-bold mb-2">
+                    Dodaj v seznam želja <span class="text-red-500">*</span>
+                </label>
+                <div class="space-y-2">
+                    @php
+                        $userWishlists = auth()->user()->userWishlists()->orderBy('is_default', 'desc')->orderBy('name')->get();
+                        $selectedWishlistIds = old('user_wishlist_ids', request()->has('wishlist_id') ? [request('wishlist_id')] : []);
+                        
+                        // If editing a wish, get the current wishlists
+                        if (isset($wish)) {
+                            $selectedWishlistIds = $wish->userWishlists()->pluck('user_wishlists.id')->toArray();
+                        }
+                        
+                        // If no selection and no default, select the default wishlist
+                        if (empty($selectedWishlistIds) && $userWishlists->isNotEmpty()) {
+                            $defaultWishlist = $userWishlists->where('is_default', true)->first();
+                            if ($defaultWishlist) {
+                                $selectedWishlistIds = [$defaultWishlist->id];
+                            }
+                        }
+                    @endphp
+                    
+                    @forelse($userWishlists as $wishlist)
+                        <label class="flex items-center space-x-3 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                name="user_wishlist_ids[]"
+                                value="{{ $wishlist->id }}"
+                                {{ in_array($wishlist->id, $selectedWishlistIds) ? 'checked' : '' }}
+                                class="form-checkbox h-4 w-4 text-green-600 transition duration-150 ease-in-out"
+                            >
+                            <div class="flex-1">
+                                <span class="text-sm font-medium text-gray-900">
+                                    {{ $wishlist->name }}
+                                    @if($wishlist->is_default)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                            Privzeto
+                                        </span>
+                                    @endif
+                                </span>
+                            </div>
+                        </label>
+                    @empty
+                        <p class="text-sm text-gray-500 italic">Nimate še nobenega seznama želja. Sistem bo ustvaril privzeti seznam.</p>
+                    @endforelse
+                </div>
+                @error('user_wishlist_ids')
+                    <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
+                @enderror
+                @error('user_wishlist_ids.*')
+                    <p class="text-red-500 text-xs italic mt-2">{{ $message }}</p>
+                @enderror
+            </div>
+ 
+           <div class="mb-4">
+             <label for="product-url" class="block text-gray-700 text-sm font-bold mb-2">Spletni naslov izdelka (url)</label>
+             <input value="{{old('url', $wish->url ?? '')}}" name="url" id="post-url" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="text" placeholder="https://" autocomplete="off" />
+             @error('url')
+             <p class="text-red-500 text-xs italic mt-2">{{$message}}</p>
+           @enderror
+           </div>
           <div id="url-scrape-status" class="mb-4 h-4">
             <span id="url-loading" class="text-sm text-gray-600" style="display:none;">🔄 Pridobivam podatke o izdelku...</span>
             <span id="url-error" class="text-red-500 text-xs italic" style="display:none;"></span>

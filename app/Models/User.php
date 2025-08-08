@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Wishlist;
+use App\Models\UserWishlist;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -60,8 +61,34 @@ class User extends Authenticatable
         $this->attributes['surname'] = $parts[1] ?? '';
     }
 
-    public function wishes() {
-        return $this->hasMany(Wishlist::class, 'user_id');
+    public function userWishlists()
+    {
+        return $this->hasMany(UserWishlist::class);
+    }
 
+    public function wishlistItems()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    public function getDefaultWishlist()
+    {
+        return $this->userWishlists()->where('is_default', true)->first();
+    }
+
+    public function getOrCreateDefaultWishlist()
+    {
+        $defaultWishlist = $this->getDefaultWishlist();
+
+        if (!$defaultWishlist) {
+            $defaultWishlist = $this->userWishlists()->create([
+                'name' => 'My Wishlist',
+                'description' => 'My default wishlist',
+                'visibility' => \App\Enums\WishlistVisibility::Public,
+                'is_default' => true,
+            ]);
+        }
+
+        return $defaultWishlist;
     }
 }

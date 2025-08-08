@@ -32,7 +32,7 @@ Route::get('/wishlist', [WishlistController::class, 'index'])->middleware('mustB
 
 // Edit Wish Route
 Route::get('/wish/{wish}/edit', [WishlistController::class, 'edit'])->middleware('mustBeLoggedIn');
-Route::post('/wish/{wish}', [WishlistController::class, 'updateWish'])->middleware('mustBeLoggedIn');
+Route::put('/wish/{wish}', [WishlistController::class, 'updateWish'])->middleware('mustBeLoggedIn');
 
 // Profile related Routes
 Route::get('/profile/{user:username}', [UserController::class, "profile"])->middleware('mustBeLoggedIn')->name('profile.show');
@@ -41,9 +41,15 @@ Route::get('/profile/{user:username}', [UserController::class, "profile"])->midd
 use App\Http\Controllers\GiftExchangeController;
 
 Route::middleware(['web', 'auth'])->group(function () {
+    // Wishlist Management Routes
+    Route::post('/wishlists', [WishlistController::class, 'storeUserWishlist'])->name('wishlists.store');
+    Route::put('/wishlists/{userWishlist}', [WishlistController::class, 'updateUserWishlist'])->name('wishlists.update');
+    Route::delete('/wishlists/{userWishlist}', [WishlistController::class, 'destroyUserWishlist'])->name('wishlists.destroy');
+    Route::post('/wishlists/{userWishlist}/items', [WishlistController::class, 'storeNewWishToSpecificWishlist'])->name('wishlists.items.store');
+
     Route::get('/gift-exchange', [GiftExchangeController::class, 'dashboard'])->name('gift-exchange.dashboard');
     Route::post('/gift-exchange/create', [GiftExchangeController::class, 'createEventWeb'])->name('gift-exchange.create');
-Route::post('/gift-exchange/{event}/invite', [GiftExchangeController::class, 'inviteParticipantsWeb'])->name('gift-exchange.invite');
-Route::get('/gift-exchange/invitations/{token}', [GiftExchangeController::class, 'showInvitation'])->name('gift-exchange.showInvitation');
-Route::post('/gift-exchange/invitations/{token}/respond', [GiftExchangeController::class, 'respondToInvitationWeb'])->name('gift-exchange.respondToInvitationWeb');
+    Route::post('/gift-exchange/{event}/invite', [GiftExchangeController::class, 'inviteParticipantsWeb'])->name('gift-exchange.invite');
+    Route::get('/gift-exchange/invitations/{token}', [GiftExchangeController::class, 'showInvitation'])->name('gift-exchange.showInvitation');
+    Route::post('/gift-exchange/invitations/{token}/respond', [GiftExchangeController::class, 'respondToInvitationWeb'])->name('gift-exchange.respondToInvitationWeb');
 });

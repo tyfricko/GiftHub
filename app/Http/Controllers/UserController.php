@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Wishlist;
+use App\Models\UserWishlist;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -46,8 +47,14 @@ class UserController extends Controller {
     }
 
     public function profile(User $user) {
+        // Eager load user's wishlists and their associated wishlist items
+        $userWishlists = $user->userWishlists()->with('items')->get();
 
-        return view('profile-wishlist', ['username' => $user->username, 'wishes' => $user->wishes()->latest()->get()]);
+        return view('profile-wishlist', [
+            'username' => $user->username,
+            'userWishlists' => $userWishlists, // Pass the collection of UserWishlist models
+            'wishes' => $user->wishlistItems()->latest()->get() // Keep for backward compatibility with views expecting 'wishes'
+        ]);
     }
     
     public function logout() {
@@ -80,6 +87,10 @@ class UserController extends Controller {
         ]);
         
         $user = User::create($incomingFields);
+        
+        // Create a default wishlist for the new user
+        $user->getOrCreateDefaultWishlist();
+        
         auth()->login($user);
         return redirect('/')->with('success', 'Hvala, ker ste ustvarili račun.');
     }
@@ -89,11 +100,18 @@ class UserController extends Controller {
         if(auth()->check()) {
 
             $user = auth()->user();
-            $wishlistItems = Wishlist::where('user_id', $user->id)->get();
+            // Check if the user has any wishlist items across all their wishlists
+            $hasWishlistItems = $user->wishlistItems()->exists();
 
-            if($wishlistItems->count() > 0) {
+            if($hasWishlistItems) {
+                // Eager load user's wishlists and their associated wishlist items
+                $userWishlists = $user->userWishlists()->with('items')->get();
 
-                return view('profile-wishlist', ['username' => $user->username, 'wishes' => $user->wishes()->latest()->get()]);
+                return view('profile-wishlist', [
+                    'username' => $user->username,
+                    'userWishlists' => $userWishlists,
+                    'wishes' => $user->wishlistItems()->latest()->get() // Keep for backward compatibility with views expecting 'wishes'
+                ]);
 
             } else {
 

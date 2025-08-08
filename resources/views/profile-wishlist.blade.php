@@ -26,48 +26,33 @@
     <x-ui.tabs :tabs="$tabs" active="wishlists" />
     
     <!-- Wishlist Content -->
-    <div class="space-y-4">
-        <!-- Add Wish Button -->
+    <div class="space-y-6">
         @if (auth()->user()->username == $username)
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-headline font-semibold text-neutral-gray">
-                    Moja lista želja
-                </h2>
-                <x-ui.button onclick="window.location.href='/add-wish'">
-                    <i class="fa fa-gift mr-2" aria-hidden="true"></i>
-                    Dodaj proizvod
-                </x-ui.button>
-            </div>
+            <x-ui.wishlist-management-toolbar />
         @endif
-        
-        <!-- Wishlist Items -->
-        @if($wishes->count() > 0)
-            <div class="grid gap-4">
-                @foreach ($wishes as $wish)
-                    <x-ui.wishlist-item-card 
-                        :wish="$wish"
-                        :canEdit="auth()->user()->username ?? '' === $username"
-                    />
-                @endforeach
-            </div>
+
+        @if($userWishlists->count() > 0)
+            @foreach ($userWishlists as $wishlist)
+                <x-ui.wishlist-group-card :wishlist="$wishlist" :canEdit="auth()->user()->username ?? '' === $username" />
+            @endforeach
         @else
             <x-ui.card class="text-center py-12">
                 <div class="text-neutral-gray opacity-75">
                     <i class="fa fa-gift text-4xl mb-4 block" aria-hidden="true"></i>
                     <h3 class="text-subheadline font-semibold mb-2">
-                        Ni še nobene želje
+                        No wishlists found
                     </h3>
                     <p class="text-body mb-4">
                         @if(auth()->user()->username ?? '' === $username)
-                            Dodajte svojo prvo željo na seznam!
+                            Start by creating your first wishlist!
                         @else
-                            {{ $username }} še ni dodal nobene želje.
+                            {{ $username }} has not created any wishlists yet.
                         @endif
                     </p>
                     @if(auth()->user()->username ?? '' === $username)
-                        <x-ui.button onclick="window.location.href='/add-wish'">
-                            Dodaj prvo željo
-                        </x-ui.button>
+                        <button class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            <i class="fas fa-plus mr-2"></i> Create New Wishlist
+                        </button>
                     @endif
                 </div>
             </x-ui.card>
@@ -75,68 +60,133 @@
     </div>
 </div>
 
+<!-- Modals -->
+<x-modals.create-wishlist-modal />
+<x-modals.edit-wishlist-modal />
+
 <!-- Toast Notification -->
-<div id="toast" 
+<div id="toast"
      style="display:none; position:fixed; bottom:32px; right:32px; background:#333; color:#fff; padding:14px 24px; border-radius:6px; z-index:2000; font-size:1.1em; opacity:0.95;">
     <span id="toastMsg"></span>
 </div>
 
 <script>
-// Wait for DOM to be fully loaded
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, looking for delete buttons...');
-    
-    // Delete button click handler
-    const deleteButtons = document.querySelectorAll('.btn-delete-wish');
-    console.log('Found delete buttons:', deleteButtons.length);
-    
-    deleteButtons.forEach((btn, index) => {
-        console.log(`Setting up listener for button ${index}:`, btn);
-        btn.addEventListener('click', async function(e) {
-            e.preventDefault();
-            console.log('Delete button clicked:', e.target);
-            
-            const wishElem = e.target.closest('.wishlist-item');
-            if (!wishElem) {
-                console.error('Could not find wishlist-item parent');
-                return;
-            }
-            
-            const wishId = wishElem.dataset.wishId;
-            const wishTitle = wishElem.dataset.wishTitle;
-            
-            console.log('Wish ID:', wishId, 'Title:', wishTitle);
-            
-            if (window.confirm(`Ali ste prepričani, da želite izbrisati "${wishTitle}"?`)) {
-                try {
-                    const resp = await fetch(`/api/wishlist/${wishId}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        credentials: 'include'
-                    });
-                    
-                    if (!resp.ok) throw new Error('Napaka pri brisanju.');
-                    
-                    wishElem.remove();
-                    showToast('Želja uspešno izbrisana.');
-                } catch (err) {
-                    console.error('Delete error:', err);
-                    showToast('Napaka: ' + err.message);
+    // Generic modal toggler
+    function toggleModal(modalId, show = null) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+
+        if (show === true) {
+            modal.style.display = 'block';
+        } else if (show === false) {
+            modal.style.display = 'none';
+        } else {
+            modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+
+    // Toast logic
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        document.getElementById('toastMsg').textContent = msg;
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 2500);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle "Create New Wishlist" button click
+        document.querySelectorAll('[data-modal-target]').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.dataset.modalTarget;
+                toggleModal(targetId, true);
+            });
+        });
+
+        // Handle "Edit Wishlist" button click
+        document.querySelectorAll('.edit-wishlist-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const wishlistId = this.dataset.wishlistId;
+                const wishlistName = this.dataset.wishlistName;
+                const wishlistDescription = this.dataset.wishlistDescription;
+                const wishlistVisibility = this.dataset.wishlistVisibility;
+
+                const form = document.getElementById('edit-wishlist-form');
+                form.action = `/wishlists/${wishlistId}`;
+                document.getElementById('edit-wishlist-id').value = wishlistId;
+                document.getElementById('edit-wishlist-name').value = wishlistName;
+                document.getElementById('edit-wishlist-description').value = wishlistDescription;
+                document.getElementById('edit-wishlist-visibility').value = wishlistVisibility;
+
+                toggleModal('edit-wishlist-modal', true);
+            });
+        });
+
+        // Handle "Delete Wishlist" button click
+        document.querySelectorAll('.delete-wishlist-btn').forEach(button => {
+            button.addEventListener('click', async function() {
+                const wishlistId = this.dataset.wishlistId;
+                const wishlistName = this.dataset.wishlistName;
+
+                if (confirm(`Are you sure you want to delete the wishlist "${wishlistName}"? This action cannot be undone.`)) {
+                    try {
+                        const response = await fetch(`/wishlists/${wishlistId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            showToast(data.message || 'Wishlist deleted successfully!');
+                            location.reload(); // Reload page to reflect changes
+                        } else {
+                            showToast(data.message || 'Error deleting wishlist.');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        showToast('An unexpected error occurred.');
+                    }
                 }
-            }
+            });
+        });
+
+        // Existing delete button for wishlist items (if still needed)
+        const deleteItemButtons = document.querySelectorAll('.btn-delete-wish');
+        deleteItemButtons.forEach((btn, index) => {
+            btn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const wishElem = e.target.closest('.wishlist-item');
+                if (!wishElem) return;
+                
+                const wishId = wishElem.dataset.wishId;
+                const wishTitle = wishElem.dataset.wishTitle;
+                
+                if (window.confirm(`Ali ste prepričani, da želite izbrisati "${wishTitle}"?`)) {
+                    try {
+                        const resp = await fetch(`/api/wishlist/${wishId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            credentials: 'include'
+                        });
+                        
+                        if (!resp.ok) throw new Error('Napaka pri brisanju.');
+                        
+                        wishElem.remove();
+                        showToast('Želja uspešno izbrisana.');
+                    } catch (err) {
+                        console.error('Delete error:', err);
+                        showToast('Napaka: ' + err.message);
+                    }
+                }
+            });
         });
     });
-});
-
-// Toast logic
-function showToast(msg) {
-    const toast = document.getElementById('toast');
-    document.getElementById('toastMsg').textContent = msg;
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 2500);
-}
 </script>
 
 @endsection

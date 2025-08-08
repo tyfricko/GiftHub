@@ -20,4 +20,10 @@
 ## Development Environment
 
 *   **Local Server:** Laragon
+*   **Local URL:** https://GiftHub.test
 *   **Package Managers:** Composer (PHP), NPM (JavaScript)
+
+## Testing Credentials
+
+*   **Test User:** matej:test123
+*   **Note:** Use these existing credentials for testing the application functionality
