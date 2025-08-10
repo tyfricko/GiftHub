@@ -8,22 +8,16 @@
         :isOwnProfile="auth()->user()->username ?? '' === $username"
     />
     
-    <!-- Navigation Tabs -->
+    <!-- Profile Tabs -->
     @php
-        $tabs = [
-            [
-                'key' => 'wishlists',
-                'label' => 'Moje želje',
-                'url' => '#',
-            ],
-            // Future tabs (commented for now)
-            // ['key' => 'events', 'label' => 'Moji dogodki', 'url' => '#'],
-            // ['key' => 'friends', 'label' => 'Prijatelji', 'url' => '#'],
-            // ['key' => 'settings', 'label' => 'Nastavitve', 'url' => '#'],
+        $profileTabs = [
+            ['key' => 'wishlists', 'label' => 'My Wishlist', 'url' => route('profile.wishlist')],
+            ['key' => 'events',    'label' => 'My Events',   'url' => route('profile.events')],
+            ['key' => 'friends',   'label' => 'My Friends',  'url' => route('profile.friends')],
+            ['key' => 'settings',  'label' => 'Settings',    'url' => route('profile.settings')],
         ];
     @endphp
-    
-    <x-ui.tabs :tabs="$tabs" active="wishlists" />
+    <x-ui.tabs :tabs="$profileTabs" :active="$activeTab ?? 'wishlists'" />
     
     <!-- Wishlist Content -->
     <div class="space-y-6">

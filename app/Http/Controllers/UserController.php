@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Wishlist;
 use App\Models\UserWishlist;
+use App\Models\GiftExchangeEvent;
+use App\Models\GiftExchangeParticipant;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -127,5 +129,163 @@ class UserController extends Controller {
             
             return view('homepage');
         }
+    }
+
+    /**
+     * Display the authenticated user's wishlists (profile tab).
+     *
+     * Variables passed to view:
+     * - user: Authenticated User model
+     * - username: string (user's username)
+     * - userWishlists: Collection of UserWishlist models with 'items' relation loaded
+     * - wishes: Collection of wishlist items (kept for backward compatibility)
+     * - activeTab: 'wishlists'
+     *
+     * @return \Illuminate\View\View
+     */
+    public function profileWishlist()
+    {
+        $user = auth()->user();
+
+        // Eager load user's wishlists and their items
+        $userWishlists = $user->userWishlists()->with('items')->get();
+
+        // Backwards-compatible list of wishlist items
+        if (method_exists($user, 'wishlistItems')) {
+            $wishes = $user->wishlistItems()->latest()->get();
+        } else {
+            // Flatten items from the user's wishlists
+            $wishes = $userWishlists->pluck('items')->flatten(1);
+        }
+
+        return view('profile-wishlist', [
+            'user' => $user,
+            'username' => $user->username,
+            'userWishlists' => $userWishlists,
+            'wishes' => $wishes,
+            'activeTab' => 'wishlists'
+        ]);
+    }
+
+    /**
+     * Display the authenticated user's gift exchange events (created and participating).
+     *
+     * Variables passed to view:
+     * - user: Authenticated User model
+     * - createdEvents: Collection of GiftExchangeEvent created by the user
+     * - participatingEvents: Collection of GiftExchangeEvent the user is participating in
+     * - counts: array with counts for 'created' and 'participating'
+     * - links: array of related routes/links used by the view
+     * - activeTab: 'events'
+     *
+     * @return \Illuminate\View\View
+     */
+    public function events()
+    {
+        $user = auth()->user();
+
+        $createdEvents = GiftExchangeEvent::where('created_by', $user->id)
+            ->orderByDesc('end_date')
+            ->get();
+
+        $participating = GiftExchangeParticipant::where('user_id', $user->id)
+            ->with('event')
+            ->get();
+
+        $participatingEvents = $participating->pluck('event')->filter()->sortByDesc('end_date')->values();
+
+        $counts = [
+            'created' => $createdEvents->count(),
+            'participating' => $participatingEvents->count()
+        ];
+
+        $links = [
+            'dashboard' => route('gift-exchange.dashboard'),
+            'createEvent' => route('gift-exchange.dashboard'),
+        ];
+
+        return view('profile-events', [
+            'user' => $user,
+            'createdEvents' => $createdEvents,
+            'participatingEvents' => $participatingEvents,
+            'counts' => $counts,
+            'links' => $links,
+            'activeTab' => 'events'
+        ]);
+    }
+
+    /**
+     * Display the authenticated user's friends/social tab.
+     *
+     * Currently returns placeholder empty collections and counts until social features are implemented.
+     *
+     * Variables passed to view:
+     * - user: Authenticated User model
+     * - following: Collection
+     * - followers: Collection
+     * - requests: Collection
+     * - counts: array (following, followers, requests)
+     * - activeTab: 'friends'
+     *
+     * @return \Illuminate\View\View
+     */
+    public function friends()
+    {
+        $user = auth()->user();
+
+        // Placeholder empty collections for now
+        $following = collect([]);
+        $followers = collect([]);
+        $requests = collect([]);
+
+        $counts = [
+            'following' => $following->count(),
+            'followers' => $followers->count(),
+            'requests' => $requests->count()
+        ];
+
+        return view('profile-friends', [
+            'user' => $user,
+            'following' => $following,
+            'followers' => $followers,
+            'requests' => $requests,
+            'counts' => $counts,
+            'activeTab' => 'friends'
+        ]);
+    }
+
+    /**
+     * Display the authenticated user's settings tab.
+     *
+     * Variables passed to view:
+     * - user: Authenticated User model
+     * - settings: array with privacy, notifications, and account defaults
+     * - activeTab: 'settings'
+     *
+     * @return \Illuminate\View\View
+     */
+    public function settings()
+    {
+        $user = auth()->user();
+
+        $settings = [
+            'privacy' => [
+                'default_wishlist_visibility' => 'public'
+            ],
+            'notifications' => [
+                'email_invitations' => true,
+                'email_assignments' => true
+            ],
+            'account' => [
+                'display_name' => $user->name,
+                'avatar' => $user->avatar ?? null
+            ]
+        ];
+
+        return view('profile-settings', [
+            'user' => $user,
+            'settings' => $settings,
+            'activeTab' => 'settings'
+        ]);
     }
 }

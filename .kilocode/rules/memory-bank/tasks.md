@@ -42,47 +42,51 @@
 - Used hybrid approach: works with current single-wishlist system but ready for multi-wishlist expansion
 - All existing functionality preserved (edit, delete, external links, CSRF protection)
 - Debug styles added (red border on delete buttons) - can be removed after testing
+### Multi-Wishlist Support (August 2025)
+**Status:** Completed
+**Description:** Implemented full multi-wishlist architecture with a many-to-many relationship between wishlist items and user wishlists, default wishlist creation, URL metadata scraping and image handling precedence, plus profile tab scaffolding and routing.
+
+**Files Modified / Added:**
+- Models
+  - [app/Models/UserWishlist.php](app/Models/UserWishlist.php) — belongsTo User, belongsToMany items via pivot, visibility enum cast, public/private scopes, single-default enforcement in boot.
+  - [app/Models/Wishlist.php](app/Models/Wishlist.php) — maps to table wishlist_items; belongsTo User; belongsToMany UserWishlist via pivot; retains legacy userWishlist() for migration compatibility.
+  - [app/Models/User.php](app/Models/User.php) — hasMany userWishlists and wishlistItems; helpers [`public function getDefaultWishlist()`](app/Models/User.php:74), [`public function getOrCreateDefaultWishlist()`](app/Models/User.php:79); name accessor/mutator.
+  - Enums: [`enum WishlistVisibility`](app/Enums/WishlistVisibility.php:5) — values public/private for user wishlists visibility.
+- Controllers
+  - [app/Http/Controllers/WishlistController.php](app/Http/Controllers/WishlistController.php) — multi-wishlist item create/update with attach/sync, image upload precedence, URL normalization/shortening, CRUD for user wishlists, add-to-specific-wishlist flow.
+  - [app/Http/Controllers/UserController.php](app/Http/Controllers/UserController.php) — default wishlist on register, tab actions [`public function profileWishlist()`](app/Http/Controllers/UserController.php:146), [`public function events()`](app/Http/Controllers/UserController.php:183), [`public function friends()`](app/Http/Controllers/UserController.php:232), [`public function settings()`](app/Http/Controllers/UserController.php:267), and [`public function showCorrectHomepage()`](app/Http/Controllers/UserController.php:100).
+- Requests
+  - [app/Http/Requests/UserWishlistRequest.php](app/Http/Requests/UserWishlistRequest.php) — validation and per-user unique wishlist names using Rule::unique scoped to user_id; enum validation.
+- Policies
+  - [app/Policies/UserWishlistPolicy.php](app/Policies/UserWishlistPolicy.php) — update/delete/addWishlistItem authorization for user wishlists.
+- Routes
+  - [routes/web.php](routes/web.php) — named routes for profile tabs, wishlist management CRUD, and gift exchange endpoints.
+- Services and Jobs
+  - [app/Services/MetadataScraperService.php](app/Services/MetadataScraperService.php) — URL metadata scrape.
+  - [app/Services/ShortUrlService.php](app/Services/ShortUrlService.php) — normalized and shortened URLs.
+  - [app/Jobs/DownloadWishlistImageJob.php](app/Jobs/DownloadWishlistImageJob.php) — downloads scraped images when no user upload present.
+- Migrations (data model evolution)
+  - [2025_08_07_211044_create_user_wishlists_table.php](database/migrations/2025_08_07_211044_create_user_wishlists_table.php)
+  - [2025_08_07_211131_add_wishlist_reference_to_wishlists_table.php](database/migrations/2025_08_07_211131_add_wishlist_reference_to_wishlists_table.php)
+  - [2025_08_07_211234_migrate_existing_wishlist_data.php](database/migrations/2025_08_07_211234_migrate_existing_wishlist_data.php)
+  - [2025_08_07_211320_rename_wishlists_to_wishlist_items.php](database/migrations/2025_08_07_211320_rename_wishlists_to_wishlist_items.php)
+  - [2025_08_08_075630_create_wishlist_item_user_wishlist_pivot_table.php](database/migrations/2025_08_08_075630_create_wishlist_item_user_wishlist_pivot_table.php)
+  - [2025_08_08_083525_make_wishlist_id_nullable_in_wishlist_items_table.php](database/migrations/2025_08_08_083525_make_wishlist_id_nullable_in_wishlist_items_table.php)
+- Views and Components
+  - [resources/views/add-wish.blade.php](resources/views/add-wish.blade.php) — multi-select checkbox for user wishlists with default selection logic and edit support; URL scrape UX.
+  - [resources/views/profile-wishlist.blade.php](resources/views/profile-wishlist.blade.php) — multi-wishlist grouped display.
+  - [resources/views/profile-events.blade.php](resources/views/profile-events.blade.php), [resources/views/profile-friends.blade.php](resources/views/profile-friends.blade.php), [resources/views/profile-settings.blade.php](resources/views/profile-settings.blade.php) — tab pages scaffolded.
+  - UI components under [resources/views/components/ui](resources/views/components/ui) — `tabs.blade.php`, `wishlist-group-card.blade.php`, `wishlist-item-card.blade.php`, `wishlist-management-toolbar.blade.php`, `avatar.blade.php`, `button.blade.php`, `card.blade.php`.
+
+**Key Improvements:**
+- Many-to-many linking of items to multiple user wishlists via pivot with unique constraints and cascade deletes.
+- Automatic default wishlist creation for new users.
+- Robust add/edit flows: image handling precedence (upload over scraped), URL normalization and shortening, and sort order management per wishlist.
+- Profile tabbed navigation scaffolded; events summary, social placeholder, settings placeholder.
+
 
 ## Upcoming Tasks
 
-### Phase 1: Multi-Wishlist Support
-**Priority:** High
-**Estimated Effort:** 2-3 weeks
-
-**Database Changes Required:**
-```sql
--- Add wishlist grouping support
-ALTER TABLE wishlists ADD COLUMN wishlist_name VARCHAR(255) DEFAULT 'My Wishlist';
-ALTER TABLE wishlists ADD COLUMN visibility ENUM('public', 'private') DEFAULT 'public';
-ALTER TABLE wishlists ADD COLUMN wishlist_group_id INT NULL;
-
--- Create wishlist groups table
-CREATE TABLE wishlist_groups (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    description TEXT NULL,
-    visibility ENUM('public', 'private') DEFAULT 'public',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-```
-
-**Files to Modify:**
-- `app/Models/Wishlist.php` - Add relationships to wishlist groups
-- `app/Models/User.php` - Add wishlistGroups relationship
-- `app/Http/Controllers/UserController.php` - Update profile method for multiple wishlists
-- `resources/views/profile-wishlist.blade.php` - Add multi-wishlist display logic
-- Create `resources/views/components/ui/wishlist-group-card.blade.php`
-
-**Steps:**
-1. Create and run database migrations
-2. Update Eloquent models with new relationships
-3. Create wishlist group management interface
-4. Update profile display to show multiple wishlists
-5. Add wishlist creation/editing functionality
-6. Implement privacy settings (public/private)
 
 ### Phase 2: Enhanced Navigation Tabs
 **Priority:** Medium

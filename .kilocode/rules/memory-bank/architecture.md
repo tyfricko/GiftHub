@@ -7,22 +7,31 @@ This project is a monolithic web application built with the Laravel framework, f
 ## Backend Architecture (MVC)
 
 *   **Models:** Located in `app/Models/`, these Eloquent models define the database schema and relationships.
-    *   `User.php`: Represents registered users.
-    *   `Wishlist.php`: Represents a single item on a user's wish list.
+    *   `User.php`: Registered users; hasMany `user_wishlists` and `wishlist_items` via [`public function userWishlists()`](app/Models/User.php:64) and [`public function wishlistItems()`](app/Models/User.php:69). Helpers [`public function getDefaultWishlist()`](app/Models/User.php:74) and [`public function getOrCreateDefaultWishlist()`](app/Models/User.php:79).
+    *   `Wishlist.php`: Maps to `wishlist_items`; belongsTo `User` via [`public function user()`](app/Models/Wishlist.php:27); belongsToMany `UserWishlist` via pivot `wishlist_item_user_wishlist` in [`public function userWishlists()`](app/Models/Wishlist.php:32). Retains legacy [`public function userWishlist()`](app/Models/Wishlist.php:39) for migration compatibility.
+    *   `UserWishlist.php`: Represents a user's wishlist group; belongsTo `User` via [`public function user()`](app/Models/UserWishlist.php:27); belongsToMany `Wishlist` via pivot in [`public function items()`](app/Models/UserWishlist.php:32); casts `visibility` to enum; enforces single default per user in [`public static function boot()`](app/Models/UserWishlist.php:54).
     *   `GiftExchangeEvent.php`: Represents a gift exchange event.
     *   `GiftExchangeParticipant.php`: Manages users participating in an event.
     *   `GiftExchangeInvitation.php`: Handles invitations to events.
+    *   Enums: [`enum WishlistVisibility`](app/Enums/WishlistVisibility.php:5) provides public/private visibility for user wishlists.
 
 *   **Views:** Located in `resources/views/`, these Blade files are responsible for rendering the UI.
-    *   `homepage.blade.php`: The main landing page.
-    *   `profile-wishlist.blade.php`: Displays a user's wish list.
-    *   `add-wish.blade.php`: The form for adding a new wish.
-    *   `gift-exchange.blade.php`: The dashboard for managing gift exchange events.
+    *   `homepage.blade.php`: The main landing page for guests.
+    *   `homepage-feed.blade.php`: Authenticated feed/landing when the user has no wishlist items yet.
+    *   `profile-wishlist.blade.php`: Displays a user's multi-wishlist view with grouped items.
+    *   `profile-events.blade.php`, `profile-friends.blade.php`, `profile-settings.blade.php`: Profile tab pages for events summary, social placeholders, and settings placeholders.
+    *   `add-wish.blade.php`: Add/edit wish form with multi-select of user wishlists and URL metadata scrape.
+    *   `gift-exchange.blade.php`: Gift exchange dashboard (base).
+    *   Components (resources/views/components/ui/): `tabs.blade.php`, `wishlist-group-card.blade.php`, `wishlist-item-card.blade.php`, `wishlist-management-toolbar.blade.php`, `avatar.blade.php`, `button.blade.php`, `card.blade.php`, etc.
+    *   Modals (resources/views/components/modals/): `create-wishlist-modal.blade.php`, `edit-wishlist-modal.blade.php`.
 
 *   **Controllers:** Located in `app/Http/Controllers/`, these classes handle the application's business logic.
-    *   `UserController.php`: Manages user authentication and profiles.
-    *   `WishlistController.php`: Handles CRUD operations for wish list items.
-    *   `GiftExchangeController.php`: Manages the logic for gift exchange events.
+    *   `UserController.php`: Authentication and profile management; tab actions [`public function profileWishlist()`](app/Http/Controllers/UserController.php:146), [`public function events()`](app/Http/Controllers/UserController.php:183), [`public function friends()`](app/Http/Controllers/UserController.php:232), [`public function settings()`](app/Http/Controllers/UserController.php:267); homepage routing [`public function showCorrectHomepage()`](app/Http/Controllers/UserController.php:100); creates default wishlist on register in [`public function register()`](app/Http/Controllers/UserController.php:82).
+    *   `WishlistController.php`: Wishlist item creation/editing with metadata scrape, image upload precedence, URL normalization/shortening in [`public function storeNewWish()`](app/Http/Controllers/WishlistController.php:36) and [`public function updateWish()`](app/Http/Controllers/WishlistController.php:237); many-to-many attach/sync via pivot; user wishlist CRUD in [`public function storeUserWishlist()`](app/Http/Controllers/WishlistController.php:387), [`public function updateUserWishlist()`](app/Http/Controllers/WishlistController.php:404), [`public function destroyUserWishlist()`](app/Http/Controllers/WishlistController.php:423); add to specific wishlist in [`public function storeNewWishToSpecificWishlist()`](app/Http/Controllers/WishlistController.php:449).
+    *   `GiftExchangeController.php`: Gift exchange dashboard and invitation flows.
+    *   `MatchingController.php`: Matching logic for gift assignment (present for future/related flows).
+*   **Policies:** Located in `app/Policies/`.
+    *   `UserWishlistPolicy.php`: Authorizes update/delete/addWishlistItem operations on user wishlists.
 
 ## Key Services
 

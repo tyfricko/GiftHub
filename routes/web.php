@@ -35,12 +35,20 @@ Route::get('/wish/{wish}/edit', [WishlistController::class, 'edit'])->middleware
 Route::put('/wish/{wish}', [WishlistController::class, 'updateWish'])->middleware('mustBeLoggedIn');
 
 // Profile related Routes
-Route::get('/profile/{user:username}', [UserController::class, "profile"])->middleware('mustBeLoggedIn')->name('profile.show');
+// Note: explicit auth-protected profile/tab routes moved below to avoid conflicting with the parameterized profile route.
 
 // Gift Exchange Dashboard Route
 use App\Http\Controllers\GiftExchangeController;
 
 Route::middleware(['web', 'auth'])->group(function () {
+    // Profile tabs (auth-protected)
+    Route::get('/profile/wishlist', [UserController::class, 'profileWishlist'])->name('profile.wishlist');
+    Route::get('/profile/events', [UserController::class, 'events'])->name('profile.events');
+    Route::get('/profile/friends', [UserController::class, 'friends'])->name('profile.friends');
+    Route::get('/profile/settings', [UserController::class, 'settings'])->name('profile.settings');
+    // Optional stub for future settings persistence (do NOT add handlers yet in this subtask)
+    // Route::post('/profile/settings', [UserController::class, 'updateSettings'])->name('profile.settings.update');
+
     // Wishlist Management Routes
     Route::post('/wishlists', [WishlistController::class, 'storeUserWishlist'])->name('wishlists.store');
     Route::put('/wishlists/{userWishlist}', [WishlistController::class, 'updateUserWishlist'])->name('wishlists.update');
@@ -52,4 +60,9 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/gift-exchange/{event}/invite', [GiftExchangeController::class, 'inviteParticipantsWeb'])->name('gift-exchange.invite');
     Route::get('/gift-exchange/invitations/{token}', [GiftExchangeController::class, 'showInvitation'])->name('gift-exchange.showInvitation');
     Route::post('/gift-exchange/invitations/{token}/respond', [GiftExchangeController::class, 'respondToInvitationWeb'])->name('gift-exchange.respondToInvitationWeb');
+    // View a specific event's dashboard (avoid collision with /invitations/* routes)
+    Route::get('/gift-exchange/{event}/dashboard', [GiftExchangeController::class, 'show'])->name('gift-exchange.show');
 });
+
+ // Public profile viewing route (other users)
+ Route::get('/profile/{user:username}', [UserController::class, "profile"])->middleware('mustBeLoggedIn')->name('profile.show');

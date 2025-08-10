@@ -28,7 +28,11 @@
         </x-ui.alert>
       @endif
 
-      @yield('content')
+      @isset($slot)
+        {{ $slot }}
+      @else
+        @yield('content')
+      @endisset
     </main>
 
     <footer class="border-t text-center text-sm text-neutral-gray py-4 mt-auto">

@@ -9,6 +9,7 @@ use App\Mail\GiftAssignmentNotificationMail;
 use App\Models\GiftExchangeEvent;
 use App\Models\GiftExchangeInvitation;
 use App\Models\GiftExchangeParticipant;
+use App\Models\GiftAssignment;
 
 class GiftExchangeController extends Controller
 {
@@ -189,6 +190,37 @@ public function getAssignments($eventId)
 
         return view('gift-exchange', [
             'events' => $events,
+        ]);
+    }
+
+    /**
+     * Show a specific gift exchange event dashboard (Web).
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\GiftExchangeEvent  $event
+     * @return \Illuminate\View\View
+     */
+    public function show(Request $request, GiftExchangeEvent $event)
+    {
+        // Eager load useful relations
+        $event->load([
+            'participants.user',
+            'invitations',
+            'assignments.giver.user',
+            'assignments.recipient.user',
+        ]);
+
+        $participants = $event->participants()->with('user')->get();
+        $invitations = $event->invitations()->get();
+
+        // If the assignments relation exists, eager load giver/recipient users
+        $assignments = method_exists($event, 'assignments') ? $event->assignments()->with(['giver.user', 'recipient.user'])->get() : collect([]);
+
+        return view('gift-exchange.show', [
+            'event' => $event,
+            'participants' => $participants,
+            'invitations' => $invitations,
+            'assignments' => $assignments,
         ]);
     }
 
