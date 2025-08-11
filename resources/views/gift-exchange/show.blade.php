@@ -23,6 +23,11 @@
         <x-ui.button as="a" href="{{ route('gift-exchange.dashboard') }}" variant="secondary" size="sm">
           <i class="fa fa-th mr-2"></i> All Events
         </x-ui.button>
+        @if(auth()->check() && auth()->id() === $event->created_by)
+          <x-ui.button as="a" href="{{ route('gift-exchange.edit', $event->id) }}" size="sm">
+            <i class="fa fa-edit mr-2"></i> Edit Event
+          </x-ui.button>
+        @endif
       </div>
     </div>
 
@@ -56,7 +61,7 @@
               <x-ui.card>
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-3">
-                    <x-ui.avatar :src="$p->user->avatar ?? null" :name="$p->user->name ?? $p->user->username ?? ('User #'.$p->user_id)" size="sm" />
+                    <x-ui.avatar :src="$p->user->avatar ? asset('storage/' . $p->user->avatar) : null" :name="$p->user->name ?? $p->user->username ?? ('User #'.$p->user_id)" size="sm" />
                     <div>
                       <div class="font-medium">
                         {{ $p->user->username ?? $p->user->name ?? ('User #' . $p->user_id) }}
@@ -70,6 +75,41 @@
           </div>
         @endif
       </section>
+
+      @if(auth()->check() && auth()->id() === $event->created_by)
+        <section>
+          <h2 class="text-lg font-semibold mb-3">Invite Participants</h2>
+          <x-ui.card>
+            <form method="POST" action="{{ route('gift-exchange.invite', $event->id) }}" class="space-y-4" id="invitation-form">
+              @csrf
+              <div id="email-inputs" class="space-y-2">
+                <x-ui.input type="email" name="emails[]" placeholder="email@example.com" required />
+              </div>
+              <div class="flex items-center gap-2">
+                <x-ui.button type="button" variant="secondary" size="sm" onclick="addEmailInput()">
+                  <i class="fa fa-plus mr-2"></i> Add Email
+                </x-ui.button>
+                <x-ui.button type="submit" size="sm">
+                  <i class="fa fa-paper-plane mr-2"></i> Send Invitations
+                </x-ui.button>
+              </div>
+            </form>
+          </x-ui.card>
+        </section>
+
+        <script>
+        function addEmailInput() {
+            const container = document.getElementById('email-inputs');
+            const newInput = document.createElement('input');
+            newInput.type = 'email';
+            newInput.name = 'emails[]';
+            newInput.placeholder = 'email@example.com';
+            newInput.required = true;
+            newInput.className = 'w-full border rounded p-2';
+            container.appendChild(newInput);
+        }
+        </script>
+      @endif
 
       <section>
         <h2 class="text-lg font-semibold mb-3">Invitations</h2>

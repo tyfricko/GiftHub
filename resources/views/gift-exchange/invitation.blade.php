@@ -16,13 +16,13 @@
                     <p class="text-sm text-gray-500 mt-2">Ends: {{ \Carbon\Carbon::parse($event->end_date)->toDayDateTimeString() }}</p>
                 </div>
 
-                <form method="POST" action="{{ route('gift-exchange.respond', $invitation->id) }}" class="space-y-4">
+                <form method="POST" action="{{ route('gift-exchange.respondToInvitationWeb', $invitation->token) }}" class="space-y-4">
                     @csrf
                     <div class="flex space-x-4">
-                        <x-ui.button type="submit" name="response" value="accept" variant="primary" class="flex-1">
+                        <x-ui.button type="submit" name="response" value="accepted" variant="primary" class="flex-1">
                             Accept Invitation
                         </x-ui.button>
-                        <x-ui.button type="submit" name="response" value="decline" variant="secondary" class="flex-1">
+                        <x-ui.button type="submit" name="response" value="declined" variant="secondary" class="flex-1">
                             Decline
                         </x-ui.button>
                     </div>
@@ -39,7 +39,6 @@
         @endif
 
         <div class="mt-6 text-sm text-gray-500">
-            <p>Invited by: {{ $invitation->inviter->name }}</p>
             <p>Sent: {{ $invitation->created_at->diffForHumans() }}</p>
         </div>
     </x-ui.card>

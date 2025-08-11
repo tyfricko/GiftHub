@@ -125,9 +125,16 @@
                     </div>
 
                     <div>
-                      <x-ui.button as="a" href="{{ route('gift-exchange.show', $event->id) }}" variant="secondary" size="sm">
-                        <i class="fa fa-eye mr-2"></i> View Dashboard
-                      </x-ui.button>
+                      <div class="flex items-center gap-2">
+                        <x-ui.button as="a" href="{{ route('gift-exchange.show', $event->id) }}" variant="secondary" size="sm">
+                          <i class="fa fa-eye mr-2"></i> View Dashboard
+                        </x-ui.button>
+                        @if(auth()->check() && auth()->id() === $event->created_by)
+                          <x-ui.button as="a" href="{{ route('gift-exchange.edit', $event->id) }}" size="sm">
+                            <i class="fa fa-edit mr-2"></i> Edit
+                          </x-ui.button>
+                        @endif
+                      </div>
                     </div>
                   </div>
                 </div>

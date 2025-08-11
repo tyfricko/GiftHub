@@ -213,6 +213,28 @@ public function getAssignments($eventId)
         $participants = $event->participants()->with('user')->get();
         $invitations = $event->invitations()->get();
 
+        // Log for debugging
+        \Log::info('Event show data', [
+            'event_id' => $event->id,
+            'participants_count' => $participants->count(),
+            'participants_data' => $participants->map(function($p) {
+                return [
+                    'id' => $p->id,
+                    'user_id' => $p->user_id,
+                    'status' => $p->status,
+                    'user_email' => $p->user->email ?? 'N/A'
+                ];
+            }),
+            'invitations_count' => $invitations->count(),
+            'invitations_data' => $invitations->map(function($i) {
+                return [
+                    'id' => $i->id,
+                    'email' => $i->email,
+                    'status' => $i->status
+                ];
+            })
+        ]);
+
         // If the assignments relation exists, eager load giver/recipient users
         $assignments = method_exists($event, 'assignments') ? $event->assignments()->with(['giver.user', 'recipient.user'])->get() : collect([]);
 
@@ -225,6 +247,47 @@ public function getAssignments($eventId)
     }
 
     // Handle Event Creation (Web)
+/**
+     * Show edit form for an event (owner-only).
+     */
+    public function edit(Request $request, GiftExchangeEvent $event)
+    {
+        $user = $request->user();
+        if (!$user || $user->id !== $event->created_by) {
+            abort(403, 'You are not authorized to edit this event.');
+        }
+
+        return view('gift-exchange.edit', [
+            'event' => $event,
+        ]);
+    }
+
+    /**
+     * Update an existing event (owner-only).
+     */
+    public function update(Request $request, GiftExchangeEvent $event)
+    {
+        $user = $request->user();
+        if (!$user || $user->id !== $event->created_by) {
+            abort(403, 'You are not authorized to update this event.');
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'end_date' => 'required|date|after:now',
+            'budget_max' => 'nullable|numeric|min:0',
+        ]);
+
+        $event->update([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'end_date' => $validated['end_date'],
+            'budget_max' => $validated['budget_max'] ?? null,
+        ]);
+
+        return redirect()->route('gift-exchange.show', $event->id)->with('success', 'Event updated successfully!');
+    }
     public function createEventWeb(Request $request)
     {
         $validated = $request->validate([
@@ -264,6 +327,17 @@ public function getAssignments($eventId)
         }
 
         $event = $invitation->event;
+
+        // If user is not logged in, show the guest invitation page prompting sign-up/login
+        $user = $request->user();
+        if (!$user) {
+            return view('gift-exchange.invitation-guest', compact('invitation', 'event'));
+        }
+
+        // Security check: Only the invited person (matching email) can view this invitation
+        if ($user->email !== $invitation->email) {
+            return redirect()->route('gift-exchange.invitationError');
+        }
 
         return view('gift-exchange.invitation', compact('invitation', 'event'));
     }
@@ -308,30 +382,53 @@ public function getAssignments($eventId)
             return redirect()->route('login')->with('info', 'This invitation has already been responded to.');
         }
 
+        // Security check: Only the invited person (matching email) can respond to this invitation
+        $user = $request->user();
+        if ($user && $user->email !== $invitation->email) {
+            return redirect()->route('gift-exchange.invitationError');
+        }
+
         // Update invitation status
         $invitation->status = $validated['response'];
         $invitation->responded_at = now();
         $invitation->save();
 
         if ($validated['response'] === 'accepted') {
-            $user = $request->user();
             if ($user) {
                 // Add as participant if not already
-                \App\Models\GiftExchangeParticipant::firstOrCreate([
+                $participant = \App\Models\GiftExchangeParticipant::firstOrCreate([
                     'event_id' => $invitation->event_id,
                     'user_id' => $user->id,
                 ], [
                     'status' => 'accepted',
                     'joined_at' => now(),
                 ]);
+                
+                // Log for debugging
+                \Log::info('Participant created/found', [
+                    'participant_id' => $participant->id,
+                    'event_id' => $invitation->event_id,
+                    'user_id' => $user->id,
+                    'was_recently_created' => $participant->wasRecentlyCreated
+                ]);
+                
                 return redirect()->route('gift-exchange.dashboard')->with('success', 'Invitation accepted! You are now a participant.');
             } else {
                 // TODO: Handle new user registration flow
                 // For now, redirect to login with a message
+                \Log::warning('User not authenticated when accepting invitation', ['token' => $token]);
                 return redirect()->route('login')->with('info', 'Please log in or register to accept this invitation.');
             }
         } else {
             return redirect()->route('login')->with('info', 'Invitation declined.');
         }
+    }
+
+    /**
+     * Show invitation error page.
+     */
+    public function invitationError()
+    {
+        return view('gift-exchange.invitation-error');
     }
 }

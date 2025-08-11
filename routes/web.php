@@ -40,6 +40,11 @@ Route::put('/wish/{wish}', [WishlistController::class, 'updateWish'])->middlewar
 // Gift Exchange Dashboard Route
 use App\Http\Controllers\GiftExchangeController;
 
+// Public invitation routes (no auth required)
+Route::get('/gift-exchange/invitations/{token}', [GiftExchangeController::class, 'showInvitation'])->name('gift-exchange.showInvitation');
+Route::post('/gift-exchange/invitations/{token}/respond', [GiftExchangeController::class, 'respondToInvitationWeb'])->name('gift-exchange.respondToInvitationWeb');
+Route::get('/gift-exchange/invitation-error', [GiftExchangeController::class, 'invitationError'])->name('gift-exchange.invitationError');
+
 Route::middleware(['web', 'auth'])->group(function () {
     // Profile tabs (auth-protected)
     Route::get('/profile/wishlist', [UserController::class, 'profileWishlist'])->name('profile.wishlist');
@@ -54,14 +59,15 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::put('/wishlists/{userWishlist}', [WishlistController::class, 'updateUserWishlist'])->name('wishlists.update');
     Route::delete('/wishlists/{userWishlist}', [WishlistController::class, 'destroyUserWishlist'])->name('wishlists.destroy');
     Route::post('/wishlists/{userWishlist}/items', [WishlistController::class, 'storeNewWishToSpecificWishlist'])->name('wishlists.items.store');
-
+ 
     Route::get('/gift-exchange', [GiftExchangeController::class, 'dashboard'])->name('gift-exchange.dashboard');
     Route::post('/gift-exchange/create', [GiftExchangeController::class, 'createEventWeb'])->name('gift-exchange.create');
     Route::post('/gift-exchange/{event}/invite', [GiftExchangeController::class, 'inviteParticipantsWeb'])->name('gift-exchange.invite');
-    Route::get('/gift-exchange/invitations/{token}', [GiftExchangeController::class, 'showInvitation'])->name('gift-exchange.showInvitation');
-    Route::post('/gift-exchange/invitations/{token}/respond', [GiftExchangeController::class, 'respondToInvitationWeb'])->name('gift-exchange.respondToInvitationWeb');
     // View a specific event's dashboard (avoid collision with /invitations/* routes)
     Route::get('/gift-exchange/{event}/dashboard', [GiftExchangeController::class, 'show'])->name('gift-exchange.show');
+    // Edit / Update event (owner-only — enforced in controller)
+    Route::get('/gift-exchange/{event}/edit', [GiftExchangeController::class, 'edit'])->name('gift-exchange.edit');
+    Route::put('/gift-exchange/{event}', [GiftExchangeController::class, 'update'])->name('gift-exchange.update');
 });
 
  // Public profile viewing route (other users)
