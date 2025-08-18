@@ -1,5 +1,5 @@
 <x-layout>
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+  <div class="container mx-auto px-6 sm:px-6 lg:px-8 py-6 space-y-6">
     <x-ui.profile-header :user="auth()->user()" :isOwnProfile="true" />
 
     <div class="flex items-start justify-between gap-4">
@@ -16,17 +16,27 @@
           @endif
         </div>
       </div>
-      <div class="flex gap-2 shrink-0">
+      <div class="flex gap-2 shrink-0 items-center">
         <x-ui.button as="a" href="{{ route('profile.events') }}" variant="secondary" size="sm">
           <i class="fa fa-arrow-left mr-2"></i> Back to My Events
         </x-ui.button>
-        <x-ui.button as="a" href="{{ route('gift-exchange.dashboard') }}" variant="secondary" size="sm">
+        <x-ui.button as="a" href="{{ route('profile.events') }}" variant="secondary" size="sm">
           <i class="fa fa-th mr-2"></i> All Events
         </x-ui.button>
         @if(auth()->check() && auth()->id() === $event->created_by)
-          <x-ui.button as="a" href="{{ route('gift-exchange.edit', $event->id) }}" size="sm">
-            <i class="fa fa-edit mr-2"></i> Edit Event
-          </x-ui.button>
+          <div class="flex items-center gap-2">
+            <x-ui.button as="a" href="{{ route('gift-exchange.edit', $event->id) }}" size="sm" variant="primary" ariaLabel="Edit event {{ $event->name }}">
+              <i class="fa fa-edit mr-2"></i> Edit Event
+            </x-ui.button>
+
+            <form method="POST" action="{{ route('gift-exchange.destroy', $event->id) }}" class="inline-flex items-center" style="margin: 0px" onsubmit="return confirm('Are you sure you want to delete this event? This action cannot be undone and will remove all participants, invitations, and assignments.')">
+              @csrf
+              @method('DELETE')
+              <x-ui.button type="submit" variant="danger" size="sm" ariaLabel="Delete event {{ $event->name }}">
+                Delete
+              </x-ui.button>
+            </form>
+          </div>
         @endif
       </div>
     </div>
@@ -64,7 +74,9 @@
                     <x-ui.avatar :src="$p->user->avatar ? asset('storage/' . $p->user->avatar) : null" :name="$p->user->name ?? $p->user->username ?? ('User #'.$p->user_id)" size="sm" />
                     <div>
                       <div class="font-medium">
-                        {{ $p->user->username ?? $p->user->name ?? ('User #' . $p->user_id) }}
+                        <a href="{{ route('profile.show', ['user' => $p->user->username]) }}" class="text-blue-600 hover:underline">
+                          {{ $p->user->username ?? $p->user->name ?? ('User #' . $p->user_id) }}
+                        </a>
                       </div>
                       <div class="text-sm text-gray-500">Status: {{ ucfirst($p->status ?? 'unknown') }}</div>
                     </div>
@@ -132,9 +144,28 @@
       </section>
 
       <section>
-        <h2 class="text-lg font-semibold mb-3">Assignments</h2>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-semibold">Assignments</h2>
+
+          {{-- Show Assign Gifts button to event owner when no assignments exist --}}
+          @if(auth()->check() && auth()->id() === $event->created_by && ($assignments ?? collect())->isEmpty())
+            <form method="POST" action="{{ route('gift-exchange.assign-gifts', $event->id) }}" class="inline">
+              @csrf
+              <x-ui.button type="submit" size="sm"
+                onclick="return confirm('This will randomly assign Secret Santa pairs and notify participants. Continue?')">
+                <i class="fa fa-random mr-2"></i> Assign Gifts
+              </x-ui.button>
+            </form>
+          @endif
+        </div>
+
         @if(($assignments ?? collect())->isEmpty())
-          <x-ui.card class="text-center text-gray-600">No assignments yet.</x-ui.card>
+          <x-ui.card class="text-center text-gray-600">
+            No assignments yet.
+            @if(auth()->check() && auth()->id() === $event->created_by)
+              <br><small class="text-gray-500">Click "Assign Gifts" to create Secret Santa pairs.</small>
+            @endif
+          </x-ui.card>
         @else
           <div class="space-y-2">
             @foreach($assignments as $a)

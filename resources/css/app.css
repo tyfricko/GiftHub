@@ -2,10 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Design System Typography Utilities */
+.text-display-lg { @apply text-6xl font-extrabold leading-none; }
+.text-display { @apply text-5xl font-bold leading-tight; }
+.text-headline-lg { @apply text-4xl font-bold leading-tight; }
+.text-headline { @apply text-3xl font-semibold leading-tight; }
+.text-subheadline { @apply text-2xl font-semibold leading-snug; }
+.text-title { @apply text-xl font-semibold leading-snug; }
+.text-body-lg { @apply text-lg leading-relaxed; }
+.text-body { @apply text-base leading-normal; }
+.text-body-sm { @apply text-sm leading-normal; }
+.text-caption { @apply text-xs leading-tight; }
+
+/* Focus States */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
 /* Custom styles from main.css */
 body,
 .tooltip {
-  font-family: "Source Sans Pro", sans-serif;
+  font-family: "Inter", "Source Sans Pro", sans-serif;
   -webkit-font-smoothing: antialiased !important;
   -moz-osx-font-smoothing: grayscale !important;
 }
@@ -434,3 +451,77 @@ textarea.tall-textarea {
 .h-24 { height: 6rem; }
 .w-32 { width: 8rem; }
 .h-32 { height: 8rem; }
+/* Notification system styles - modern, accessible, responsive */
+.notification {
+  transition: transform 0.28s cubic-bezier(.2,.9,.2,1), opacity 0.28s ease;
+  will-change: transform, opacity;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  background-color: rgba(255, 255, 255, 0.72); /* default translucent background for readability */
+}
+
+/* Enter / exit helper classes */
+.notification.opacity-0 { opacity: 0; }
+.notification.opacity-100 { opacity: 1; }
+.notification.translate-y-2 { transform: translateY(8px); }
+.notification.translate-y-0 { transform: translateY(0); }
+
+/* Type variants with subtle transparency and readable text */
+.notification--success {
+  background-color: rgba(22, 163, 74, 0.92); /* primary-600 */
+  color: #ffffff;
+}
+.notification--error {
+  background-color: rgba(239, 68, 68, 0.94); /* red-500 */
+  color: #ffffff;
+}
+.notification--warning {
+  background-color: rgba(245, 158, 11, 0.94); /* amber-500 */
+  color: #0f172a; /* dark text for contrast on amber */
+}
+.notification--info {
+  background-color: rgba(37, 99, 235, 0.94); /* accent-600 */
+  color: #ffffff;
+}
+
+/* Content layout */
+.notification svg { flex-shrink: 0; }
+.notification .font-semibold { color: inherit; }
+.notification .text-sm { color: inherit; }
+
+/* Close button styling */
+.notification button {
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0.95;
+  cursor: pointer;
+}
+.notification button:hover { opacity: 1; }
+
+/* Responsive sizing */
+@media (max-width: 640px) {
+  #global-notifications { padding-left: 12px; padding-right: 12px; bottom: 16px; }
+  .notification { width: calc(100% - 24px); max-width: 100%; }
+}
+@media (min-width: 641px) {
+  #global-notifications { padding-left: 24px; padding-right: 24px; bottom: 32px; }
+  .notification { max-width: 360px; }
+}
+
+/* Accessibility focus state */
+.notification:focus-within {
+  outline: 2px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 2px;
+}
+
+/* Slight drop shadow for depth */
+.notification {
+  box-shadow: 0 8px 20px rgba(2,6,23,0.12);
+}
+
+/* Utility to visually hide for noscript fallback */
+.global-notifications-noscript { display: none; }
+
+/* Smooth stacking gap */
+#notifications { display: flex; flex-direction: column-reverse; gap: 10px; align-items: flex-end; }

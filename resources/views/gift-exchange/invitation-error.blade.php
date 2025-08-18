@@ -31,7 +31,7 @@
           <x-ui.button as="a" href="{{ route('profile.events') }}">
             <i class="fa fa-user mr-2"></i> Go to My Profile
           </x-ui.button>
-          <x-ui.button as="a" href="{{ route('gift-exchange.dashboard') }}" variant="secondary">
+          <x-ui.button as="a" href="{{ route('profile.events') }}" variant="secondary">
             <i class="fa fa-gift mr-2"></i> View My Events
           </x-ui.button>
         @else

@@ -6,8 +6,8 @@
 @php
     $baseClasses = 'rounded-md p-4 mb-4 text-sm font-semibold';
     $typeClasses = $type === 'error'
-        ? 'bg-error text-white'
-        : 'bg-success text-white';
+        ? 'bg-red-500 text-white'
+        : 'bg-primary-600 text-white';
 @endphp
 
 <div {{ $attributes->merge(['class' => $baseClasses . ' ' . $typeClasses]) }} role="alert">

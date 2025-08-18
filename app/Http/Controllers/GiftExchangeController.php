@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Mail\GiftExchangeInvitationMail;
 use App\Mail\GiftAssignmentNotificationMail;
 use App\Models\GiftExchangeEvent;
@@ -133,40 +135,78 @@ class GiftExchangeController extends Controller
     public function assignGifts(Request $request, $eventId)
     {
         $event = \App\Models\GiftExchangeEvent::findOrFail($eventId);
-        $participants = $event->participants()->where('status', 'accepted')->with('user.wishes')->get();
+
+        // Authorization: only event owner may trigger assignments
+        $user = $request->user();
+        if (!$user || $user->id !== $event->created_by) {
+            return response()->json(['error' => 'Unauthorized. Only the event owner can assign gifts.'], 403);
+        }
+
+        // Prevent duplicate assignments
+        if ($event->assignments()->exists()) {
+            return response()->json(['error' => 'Assignments already exist for this event.'], 400);
+        }
+
+        $participants = $event->participants()->where('status', 'accepted')->with('user')->get();
 
         if ($participants->count() < 2) {
             return response()->json(['error' => 'At least 2 participants are required for assignment.'], 400);
         }
 
-        // Shuffle participants for random assignment
-        $givers = $participants->shuffle()->values();
-        $recipients = $givers->slice(1)->concat($givers->slice(0, 1))->values();
-
+        // Use transaction to ensure atomicity
         $assignments = [];
-        foreach ($givers as $i => $giver) {
-            $recipient = $recipients[$i];
-            // Prevent self-assignment (should not happen with above logic)
-            if ($giver->id === $recipient->id) {
-                return response()->json(['error' => 'Assignment failed due to self-assignment.'], 500);
-            }
-            $assignment = \App\Models\GiftAssignment::create([
+        try {
+            DB::transaction(function () use ($event, $participants, &$assignments) {
+                // Shuffle participants for random assignment
+                $givers = $participants->shuffle()->values();
+                $recipients = $givers->slice(1)->concat($givers->slice(0, 1))->values();
+
+                foreach ($givers as $i => $giver) {
+                    $recipient = $recipients[$i];
+
+                    // Prevent self-assignment (defensive)
+                    if ($giver->id === $recipient->id) {
+                        throw new \Exception('Assignment failed due to self-assignment.');
+                    }
+
+                    $assignment = GiftAssignment::create([
+                        'event_id' => $event->id,
+                        'giver_id' => $giver->id,
+                        'recipient_id' => $recipient->id,
+                        'assigned_at' => now(),
+                    ]);
+
+                    // Send assignment notification email to giver (best-effort)
+                    try {
+                        Mail::to($giver->user->email)->send(
+                            new GiftAssignmentNotificationMail($event, $giver, $recipient)
+                        );
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to send assignment email', [
+                            'event_id' => $event->id,
+                            'giver_id' => $giver->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+
+                    $assignments[] = $assignment;
+                }
+
+                // Mark event as completed if model has a status column later (non-breaking)
+                if (Schema::hasColumn('gift_exchange_events', 'status')) {
+                    $event->update(['status' => 'completed', 'processed_at' => now()]);
+                }
+            }, 5);
+        } catch (\Exception $e) {
+            \Log::error('Gift assignment transaction failed', [
                 'event_id' => $event->id,
-                'giver_id' => $giver->id,
-                'recipient_id' => $recipient->id,
-                'assigned_at' => now(),
+                'error' => $e->getMessage()
             ]);
-            // TODO: Send notification email to $giver->user->email with recipient info (stubbed)
-            // Send assignment notification email to giver
-            Mail::to($giver->user->email)->send(
-                new GiftAssignmentNotificationMail($event, $giver, $recipient)
-            );
-            $assignments[] = $assignment;
+            return response()->json(['error' => 'Assignment failed: ' . $e->getMessage()], 500);
         }
 
-        return response()->json([
-            'assignments' => $assignments,
-        ]);
+        return redirect()->route('gift-exchange.show', $event->id)
+                         ->with('success', 'Gift assignments created successfully!');
     }
 
 // 6. Get assignments for an event
@@ -314,7 +354,7 @@ public function getAssignments($eventId)
             'joined_at' => now(),
         ]);
 
-        return redirect()->route('gift-exchange.dashboard')->with('success', 'Event created successfully!');
+        return redirect()->route('profile.events')->with('success', 'Event created successfully!');
     }
 
     // Show invitation page (Web)
@@ -366,7 +406,7 @@ public function getAssignments($eventId)
             $invitations[] = $invitation;
         }
 
-        return redirect()->route('gift-exchange.dashboard')->with('success', 'Invitations sent successfully!');
+        return redirect()->route('profile.events')->with('success', 'Invitations sent successfully!');
     }
 
     // Respond to invitation (Web)
@@ -412,7 +452,7 @@ public function getAssignments($eventId)
                     'was_recently_created' => $participant->wasRecentlyCreated
                 ]);
                 
-                return redirect()->route('gift-exchange.dashboard')->with('success', 'Invitation accepted! You are now a participant.');
+                return redirect()->route('profile.events')->with('success', 'Invitation accepted! You are now a participant.');
             } else {
                 // TODO: Handle new user registration flow
                 // For now, redirect to login with a message
@@ -430,5 +470,39 @@ public function getAssignments($eventId)
     public function invitationError()
     {
         return view('gift-exchange.invitation-error');
+    }
+
+    /**
+     * Show the create event form.
+     */
+    public function showCreateForm(Request $request)
+    {
+        $user = $request->user();
+        $events = \App\Models\GiftExchangeEvent::where('created_by', $user->id)->orderBy('end_date', 'desc')->get();
+
+        return view('gift-exchange', [
+            'events' => $events,
+        ]);
+    }
+
+    /**
+     * Delete a gift exchange event (owner-only).
+     */
+    public function destroy(Request $request, GiftExchangeEvent $event)
+    {
+        $user = $request->user();
+        
+        // Authorization: only event owner can delete
+        if (!$user || $user->id !== $event->created_by) {
+            abort(403, 'You are not authorized to delete this event.');
+        }
+
+        // Store event name for success message
+        $eventName = $event->name;
+
+        // Delete the event (cascade deletes will handle related records)
+        $event->delete();
+
+        return redirect()->route('profile.events')->with('success', "Event '{$eventName}' has been deleted successfully.");
     }
 }

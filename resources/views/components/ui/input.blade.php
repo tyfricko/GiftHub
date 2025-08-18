@@ -19,6 +19,6 @@
     @if($required) required @endif
     @if($autocomplete) autocomplete="{{ $autocomplete }}" @endif
     {{ $attributes->merge([
-        'class' => 'w-full px-4 py-2 border border-neutral-gray rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition duration-150 text-body text-neutral-gray'
+        'class' => 'w-full px-4 py-3 border border-neutral-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-accent-600 focus:border-accent-600 transition duration-150 text-body text-neutral-700'
     ]) }}
 />

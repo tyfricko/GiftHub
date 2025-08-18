@@ -49,14 +49,7 @@ class UserController extends Controller {
     }
 
     public function profile(User $user) {
-        // Eager load user's wishlists and their associated wishlist items
-        $userWishlists = $user->userWishlists()->with('items')->get();
-
-        return view('profile-wishlist', [
-            'username' => $user->username,
-            'userWishlists' => $userWishlists, // Pass the collection of UserWishlist models
-            'wishes' => $user->wishlistItems()->latest()->get() // Keep for backward compatibility with views expecting 'wishes'
-        ]);
+        return $this->showWishlistForUser($user);
     }
     
     public function logout() {
@@ -109,11 +102,7 @@ class UserController extends Controller {
                 // Eager load user's wishlists and their associated wishlist items
                 $userWishlists = $user->userWishlists()->with('items')->get();
 
-                return view('profile-wishlist', [
-                    'username' => $user->username,
-                    'userWishlists' => $userWishlists,
-                    'wishes' => $user->wishlistItems()->latest()->get() // Keep for backward compatibility with views expecting 'wishes'
-                ]);
+                return $this->showWishlistForUser($user);
 
             } else {
 
@@ -127,7 +116,7 @@ class UserController extends Controller {
         
         } else {
             
-            return view('homepage');
+            return view('homepage-redesigned');
         }
     }
 
@@ -145,22 +134,45 @@ class UserController extends Controller {
      */
     public function profileWishlist()
     {
-        $user = auth()->user();
+        return $this->showWishlistForUser(auth()->user());
+    }
 
-        // Eager load user's wishlists and their items
-        $userWishlists = $user->userWishlists()->with('items')->get();
+    private function showWishlistForUser(User $user)
+    {
+        $viewer = auth()->user();
+        $isOwnProfile = $viewer && $viewer->id === $user->id;
 
-        // Backwards-compatible list of wishlist items
-        if (method_exists($user, 'wishlistItems')) {
-            $wishes = $user->wishlistItems()->latest()->get();
+        if ($isOwnProfile) {
+            // Owner sees all wishlists and all items
+            $user->load([
+                'userWishlists.items' => function ($q) {
+                    $q->latest();
+                },
+                'wishlistItems'
+            ]);
+
+            $userWishlists = $user->userWishlists;
+            $wishes = $user->wishlistItems->sortByDesc('created_at');
         } else {
-            // Flatten items from the user's wishlists
-            $wishes = $userWishlists->pluck('items')->flatten(1);
+            // Only show PUBLIC wishlists (and their items) to other users
+            $userWishlists = $user->userWishlists()
+                ->public()
+                ->with(['items' => function ($q) {
+                    $q->latest();
+                }])
+                ->get();
+
+            // Flatten only items from PUBLIC wishlists (avoid leaking private items)
+            $wishes = $userWishlists
+                ->flatMap(function ($wishlist) {
+                    return $wishlist->items;
+                })
+                ->sortByDesc('created_at')
+                ->values();
         }
 
         return view('profile-wishlist', [
-            'user' => $user,
-            'username' => $user->username,
+            'user' => $user->fresh(),
             'userWishlists' => $userWishlists,
             'wishes' => $wishes,
             'activeTab' => 'wishlists'
@@ -201,7 +213,7 @@ class UserController extends Controller {
 
         $links = [
             'dashboard' => route('gift-exchange.dashboard'),
-            'createEvent' => route('gift-exchange.dashboard'),
+            'createEvent' => route('gift-exchange.create.form'),
         ];
 
         return view('profile-events', [

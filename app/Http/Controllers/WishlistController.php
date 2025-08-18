@@ -26,11 +26,7 @@ class WishlistController extends Controller
      */
     public function index()
     {
-        $userWishlists = auth()->user()->userWishlists()->latest()->get();
-        return view('profile-wishlist', [
-            'userWishlists' => $userWishlists,
-            'username' => auth()->user()->username
-        ]);
+        return redirect()->route('profile.wishlist');
     }
 
     public function storeNewWish(WishlistItemRequest $request) {
@@ -343,12 +339,14 @@ class WishlistController extends Controller
      */
     public function destroy($id)
     {
-        \Log::info("Attempting to delete wishlist item with ID: {$id}");
+        \Log::info("Attempting to delete wishlist item with ID: {$id} by user: " . auth()->id());
+        
         try {
             $wishlist = \App\Models\Wishlist::find($id);
             if (!$wishlist) {
                 \Log::warning("Wishlist item with ID: {$id} not found.");
                 return response()->json([
+                    'success' => false,
                     'message' => 'Wishlist item not found.'
                 ], 404);
             }
@@ -356,17 +354,25 @@ class WishlistController extends Controller
             if ($wishlist->user_id !== auth()->id()) {
                 \Log::warning("Unauthorized attempt to delete wishlist item with ID: {$id} by user: " . auth()->id());
                 return response()->json([
+                    'success' => false,
                     'message' => 'You are not authorized to delete this wishlist item.'
                 ], 403);
             }
 
+            $itemName = $wishlist->itemname;
             $wishlist->delete();
-            \Log::info("Wishlist item with ID: {$id} deleted successfully.");
-            return response()->noContent();
+            \Log::info("Wishlist item '{$itemName}' with ID: {$id} deleted successfully.");
+            
+            return response()->json([
+                'success' => true,
+                'message' => "Item '{$itemName}' deleted successfully!"
+            ]);
+            
         } catch (\Exception $e) {
             \Log::error("Error deleting wishlist item with ID: {$id}. Error: " . $e->getMessage());
             return response()->json([
-                'message' => 'Napaka pri brisanju.' // Error during deletion.
+                'success' => false,
+                'message' => 'An error occurred while deleting the item: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -422,25 +428,57 @@ class WishlistController extends Controller
      */
     public function destroyUserWishlist(UserWishlist $userWishlist)
     {
-        // Policy will handle authorization
-        $this->authorize('delete', $userWishlist);
+        \Log::info("Attempting to delete user wishlist with ID: {$userWishlist->id} by user: " . auth()->id());
+        
+        try {
+            // Policy will handle authorization
+            $this->authorize('delete', $userWishlist);
+            \Log::info("Authorization passed for wishlist deletion: {$userWishlist->id}");
 
-        // Prevent deletion if it's the user's only wishlist
-        if (auth()->user()->userWishlists()->count() === 1) {
-            return redirect()->back()->with('error', 'Cannot delete the last wishlist. Please create another wishlist first.');
-        }
-
-        // If the deleted wishlist was the default, set another one as default
-        if ($userWishlist->is_default) {
-            $newDefault = auth()->user()->userWishlists()->where('id', '!=', $userWishlist->id)->first();
-            if ($newDefault) {
-                $newDefault->update(['is_default' => true]);
+            // Prevent deletion if it's the user's only wishlist
+            $userWishlistCount = auth()->user()->userWishlists()->count();
+            \Log::info("User has {$userWishlistCount} wishlists total");
+            
+            if ($userWishlistCount === 1) {
+                \Log::warning("Attempted to delete last wishlist for user: " . auth()->id());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete the last wishlist. Please create another wishlist first.'
+                ], 400);
             }
+
+            // If the deleted wishlist was the default, set another one as default
+            if ($userWishlist->is_default) {
+                \Log::info("Deleted wishlist was default, setting new default");
+                $newDefault = auth()->user()->userWishlists()->where('id', '!=', $userWishlist->id)->first();
+                if ($newDefault) {
+                    $newDefault->update(['is_default' => true]);
+                    \Log::info("Set new default wishlist: {$newDefault->id}");
+                }
+            }
+
+            $wishlistName = $userWishlist->name;
+            $userWishlist->delete(); // This will also delete associated wishlist items due to cascade on delete in migration
+            \Log::info("User wishlist '{$wishlistName}' deleted successfully");
+
+            return response()->json([
+                'success' => true,
+                'message' => "Wishlist '{$wishlistName}' deleted successfully!"
+            ]);
+            
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            \Log::warning("Authorization failed for wishlist deletion: {$userWishlist->id} by user: " . auth()->id());
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to delete this wishlist.'
+            ], 403);
+        } catch (\Exception $e) {
+            \Log::error("Error deleting user wishlist with ID: {$userWishlist->id}. Error: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while deleting the wishlist: ' . $e->getMessage()
+            ], 500);
         }
-
-        $userWishlist->delete(); // This will also delete associated wishlist items due to cascade on delete in migration
-
-        return redirect()->back()->with('success', 'Wishlist deleted successfully!');
     }
 
     /**

@@ -1,91 +1,78 @@
-<x-layout>
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-    <x-ui.profile-header :user="auth()->user()" :isOwnProfile="true" />
 
+@extends('components.layout')
+
+@section('content')
+<div class="container mx-auto px-6">
+    <!-- Profile Header -->
+    <x-ui.profile-header
+        :user="auth()->user()"
+        :isOwnProfile="true"
+        :avatarSize="'lg'"
+    />
+    
+    <!-- Page Title and Intro -->
+    <div class="mt-6 mb-6">
+        <h1 class="text-3xl lg:text-4xl font-extrabold text-neutral-900">Welcome, {{ auth()->user()->fullname ?? auth()->user()->username }}!</h1>
+        <p class="text-body text-neutral-600 mt-2">This is your personal space to manage your wishlists and gift exchanges.</p>
+    </div>
+
+    <!-- Profile Tabs -->
     @php
-      $profileTabs = [
-        ['key' => 'wishlists', 'label' => 'My Wishlist', 'url' => route('profile.wishlist')],
-        ['key' => 'events',    'label' => 'My Events',   'url' => route('profile.events')],
-        ['key' => 'friends',   'label' => 'My Friends',  'url' => route('profile.friends')],
-        ['key' => 'settings',  'label' => 'Settings',    'url' => route('profile.settings')],
-      ];
+        $profileTabs = [
+            ['key' => 'wishlists', 'label' => 'My Wishlist', 'url' => route('profile.wishlist')],
+            ['key' => 'events',    'label' => 'My Events',   'url' => route('profile.events')],
+        ];
     @endphp
-    <x-ui.tabs :tabs="$profileTabs" :active="$activeTab" />
+    <x-ui.tabs :tabs="$profileTabs" :active="'events'" />
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <x-ui.card>
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-sm text-gray-500">Created Events</div>
-            <div class="text-2xl font-semibold">{{ $counts['created'] ?? 0 }}</div>
-          </div>
+    <!-- Toolbar -->
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold text-neutral-900">My Events</h2>
+        <div class="flex items-center space-x-3">
+            <button class="inline-flex items-center px-4 py-2 rounded-md bg-neutral-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 focus:outline-none">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                Get Event Ideas
+            </button>
+            <a href="{{ $links['createEvent'] ?? ($links['dashboard'] ?? '#') }}" class="inline-flex items-center px-4 py-2 rounded-md bg-primary-600 text-white hover:bg-primary-700 focus:outline-none">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                Create Event
+            </a>
         </div>
-      </x-ui.card>
-
-      <x-ui.card>
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-sm text-gray-500">Participating</div>
-            <div class="text-2xl font-semibold">{{ $counts['participating'] ?? 0 }}</div>
-          </div>
-        </div>
-      </x-ui.card>
     </div>
 
-    <div class="flex justify-end">
-      <x-ui.button as="a" href="{{ $links['createEvent'] ?? ($links['dashboard'] ?? '#') }}">
-        <i class="fa fa-plus mr-2"></i> Create Event
-      </x-ui.button>
-    </div>
-
+    <!-- Events Items -->
     <div class="space-y-6">
-      <section>
-        <h2 class="text-lg font-semibold mb-3">Created Events</h2>
+        @php
+            $hasCreated = !($createdEvents ?? collect())->isEmpty();
+            $hasParticipating = !($participatingEvents ?? collect())->isEmpty();
+        @endphp
 
-        @if(($createdEvents ?? collect())->isEmpty())
-          <x-ui.card class="text-center text-gray-600">You haven't created any events yet.</x-ui.card>
-        @else
-          <div class="space-y-3">
-            @foreach($createdEvents as $event)
-              <x-ui.card>
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <div class="font-medium">{{ $event->name ?? $event->title ?? ('Event #'.$event->id) }}</div>
-                    <div class="text-sm text-gray-500">{{ $event->end_date ?? $event->date ?? '' }}</div>
-                  </div>
-                  <div class="flex gap-2">
-                    <x-ui.button as="a" href="{{ route('gift-exchange.show', $event->id) }}" size="sm" variant="secondary">View Dashboard</x-ui.button>
-                  </div>
+        @if(!$hasCreated && !$hasParticipating)
+            <x-ui.card class="text-center py-12">
+                <div class="text-neutral-600">
+                    <i class="fa fa-calendar text-4xl mb-4 block" aria-hidden="true"></i>
+                    <h3 class="text-subheadline font-semibold mb-2">No events yet!</h3>
+                    <p class="text-body mb-4">Click 'Create Event' to start a new gift exchange.</p>
+                    <a href="{{ $links['createEvent'] ?? ($links['dashboard'] ?? '#') }}" class="inline-flex items-center px-4 py-2 rounded-md bg-primary-600 text-white">Create Event</a>
                 </div>
-              </x-ui.card>
-            @endforeach
-          </div>
-        @endif
-      </section>
-
-      <section>
-        <h2 class="text-lg font-semibold mb-3">Participating Events</h2>
-
-        @if(($participatingEvents ?? collect())->isEmpty())
-          <x-ui.card class="text-center text-gray-600">You are not participating in any events yet.</x-ui.card>
+            </x-ui.card>
         @else
-          <div class="space-y-3">
-            @foreach($participatingEvents as $event)
-              <x-ui.card>
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <div class="font-medium">{{ $event->name ?? $event->title ?? ('Event #'.$event->id) }}</div>
-                    <div class="text-sm text-gray-500">{{ $event->end_date ?? $event->date ?? '' }}</div>
-                  </div>
-                  <div class="flex gap-2">
-                    <x-ui.button as="a" href="{{ route('gift-exchange.show', $event->id) }}" size="sm" variant="secondary">View Dashboard</x-ui.button>
-                  </div>
-                </div>
-              </x-ui.card>
+            @foreach(($createdEvents ?? collect())->merge($participatingEvents ?? collect()) as $event)
+                <x-ui.event-card :event="$event" :showImage="false" />
             @endforeach
-          </div>
         @endif
-      </section>
     </div>
-  </div>
-</x-layout>
+</div>
+
+
+<script>
+    // Notifications are handled by the global NotificationManager.
+    // Use showNotification(message, type) or the backward compatible showToast(message, type).
+
+    document.addEventListener('DOMContentLoaded', function() {
+    });
+</script>
+
+@endsection

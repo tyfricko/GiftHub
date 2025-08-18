@@ -31,10 +31,18 @@ class MetadataScraperService
             return $result;
         }
 
+        // Detect and convert encoding to UTF-8 if necessary
+        $detectedEncoding = mb_detect_encoding($html, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
+        if ($detectedEncoding && $detectedEncoding !== 'UTF-8') {
+            $html = mb_convert_encoding($html, 'UTF-8', $detectedEncoding);
+        }
+
         // Suppress warnings for malformed HTML
         libxml_use_internal_errors(true);
         $doc = new \DOMDocument();
-        if (!$doc->loadHTML($html)) {
+        
+        // Load HTML with explicit UTF-8 encoding
+        if (!$doc->loadHTML('<?xml encoding="UTF-8">' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD)) {
             return $result;
         }
         libxml_clear_errors();

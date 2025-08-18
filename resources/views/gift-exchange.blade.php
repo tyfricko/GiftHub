@@ -14,18 +14,16 @@
       </div>
     </div>
 
-    @if(session('success'))
-      <x-ui.alert type="success">{{ session('success') }}</x-ui.alert>
-    @endif
-    @if($errors->any())
-      <x-ui.alert type="error">
-        <ul class="list-disc list-inside">
-          @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-          @endforeach
-        </ul>
-      </x-ui.alert>
-    @endif
+    <script>
+      window.__initialNotifications = window.__initialNotifications || [];
+      @if(session('success'))
+        window.__initialNotifications.push({ type: 'success', message: {!! json_encode(session('success')) !!} });
+      @endif
+
+      @if($errors->any())
+        window.__initialNotifications.push({ type: 'error', message: {!! json_encode(implode('<br/>', $errors->all())) !!} });
+      @endif
+    </script>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <x-ui.card>
@@ -130,9 +128,18 @@
                           <i class="fa fa-eye mr-2"></i> View Dashboard
                         </x-ui.button>
                         @if(auth()->check() && auth()->id() === $event->created_by)
-                          <x-ui.button as="a" href="{{ route('gift-exchange.edit', $event->id) }}" size="sm">
-                            <i class="fa fa-edit mr-2"></i> Edit
-                          </x-ui.button>
+                          <div class="flex items-center gap-2">
+                            <x-ui.button as="a" href="{{ route('gift-exchange.edit', $event->id) }}" size="sm" variant="primary">
+                              <i class="fa fa-edit mr-2"></i> Edit
+                            </x-ui.button>
+                            <form method="POST" action="{{ route('gift-exchange.destroy', $event->id) }}" class="inline-flex items-center" onsubmit="return confirm('Are you sure you want to delete this event? This action cannot be undone.')">
+                              @csrf
+                              @method('DELETE')
+                              <x-ui.button type="submit" variant="danger" size="sm" ariaLabel="Delete {{ $event->name }}">
+                                Delete
+                              </x-ui.button>
+                            </form>
+                          </div>
                         @endif
                       </div>
                     </div>

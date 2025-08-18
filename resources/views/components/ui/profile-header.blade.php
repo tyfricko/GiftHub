@@ -27,13 +27,18 @@
             </p>
             
             @if($isOwnProfile)
-                <x-ui.button 
-                    variant="secondary" 
+                <x-ui.button
+                    variant="secondary"
                     size="sm"
                     onclick="window.location.href='/manage-avatar'"
                 >
                     Uredi podatke Profila
                 </x-ui.button>
+            @else
+                <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4" role="alert">
+                    <p class="font-bold">Viewing Another User's Profile</p>
+                    <p>You are viewing the profile and wishlists of {{ $user->username }}.</p>
+                </div>
             @endif
         </div>
     </div>

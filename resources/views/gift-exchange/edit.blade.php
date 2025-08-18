@@ -17,18 +17,16 @@
       </div>
     </div>
 
-    @if(session('success'))
-      <x-ui.alert type="success">{{ session('success') }}</x-ui.alert>
-    @endif
-    @if($errors->any())
-      <x-ui.alert type="error">
-        <ul class="list-disc list-inside">
-          @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-          @endforeach
-        </ul>
-      </x-ui.alert>
-    @endif
+    <script>
+      window.__initialNotifications = window.__initialNotifications || [];
+      @if(session('success'))
+        window.__initialNotifications.push({ type: 'success', message: {!! json_encode(session('success')) !!} });
+      @endif
+
+      @if($errors->any())
+        window.__initialNotifications.push({ type: 'error', message: {!! json_encode(implode('<br/>', $errors->all())) !!} });
+      @endif
+    </script>
 
     <x-ui.card>
       <form method="POST" action="{{ route('gift-exchange.update', $event->id) }}" class="space-y-4">

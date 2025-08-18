@@ -3,6 +3,10 @@
 *   **Current status:** Multi-wishlist functionality is fully implemented and operational. Profile tab navigation is scaffolded and routed for wishlists, events, friends, and settings. Gift exchange system is fully functional with complete invitation flow, event editing, and secure access controls. Avatar display fixes and auth-based navigation are completed. Homepage logic directs signed-in users with items to profile wishlists, otherwise to a feed page.
 
 *   **Recent changes:**
+    *   **Wishlist Item Delete Bug Fix (August 2025):**
+        *   Fixed missing DELETE route for individual wishlist items (`DELETE /wishlist/{id}`)
+        *   Updated `WishlistController::destroy()` method to return proper HTML redirects instead of JSON responses
+        *   Delete functionality now works correctly with confirmation dialog, item removal, and success messages
     *   **Gift Exchange System (August 2025):**
         *   Complete invitation system with email verification and multi-state user handling
         *   Owner-only event editing functionality with proper authorization
