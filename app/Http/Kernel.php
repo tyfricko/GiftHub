@@ -65,5 +65,7 @@ class Kernel extends HttpKernel
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        // Custom middleware: redirects unverified users to a friendly verification notice
+        'requireVerified' => \App\Http\Middleware\RequireEmailVerification::class,
     ];
 }

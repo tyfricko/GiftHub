@@ -1,8 +1,26 @@
 # Context
 
-*   **Current status:** Multi-wishlist functionality is fully implemented and operational. Profile tab navigation is scaffolded and routed for wishlists, events, friends, and settings. Gift exchange system is fully functional with complete invitation flow, event editing, and secure access controls. Avatar display fixes and auth-based navigation are completed. Homepage logic directs signed-in users with items to profile wishlists, otherwise to a feed page.
+*   **Current status:** Multi-wishlist functionality is fully implemented and operational. Profile tab navigation is scaffolded and routed for wishlists, events, friends, and settings. Gift exchange system is fully functional with complete invitation flow, event editing, and secure access controls. Avatar display fixes and auth-based navigation are completed. Homepage logic directs signed-in users with items to profile wishlists, otherwise to a feed page. Email verification UX and gating are implemented: users must verify email before creating/editing wishlist items or managing gift-exchange events, leveraging Laravel’s built-in verification with [class User extends Authenticatable implements MustVerifyEmail](app/Models/User.php:13), custom middleware [public function handle()](app/Http/Middleware/RequireEmailVerification.php:20), and verification routes in [routes/web.php](routes/web.php).
 
 *   **Recent changes:**
+    *   **Email Verification UX & Middleware (August 2025):**
+        *   Implemented Laravel email verification via [class User extends Authenticatable implements MustVerifyEmail](app/Models/User.php:13).
+        *   Added custom middleware [App\Http\Middleware\RequireEmailVerification](app/Http/Middleware/RequireEmailVerification.php) with [public function handle()](app/Http/Middleware/RequireEmailVerification.php:20) to:
+            *   Preserve intended URL in session at verification time (stores `url.intended` in [public function handle()](app/Http/Middleware/RequireEmailVerification.php:20) line 26).
+            *   Redirect unverified users to home with a friendly warning flash message.
+        *   Registered middleware alias `requireVerified` in [protected $middlewareAliases](app/Http/Kernel.php:55) (see line 69).
+        *   Added verification routes in [routes/web.php](routes/web.php):
+            *   `verification.notice` (GET `/email/verify`) shows [resources/views/auth/verify-email.blade.php](resources/views/auth/verify-email.blade.php).
+            *   `verification.verify` fulfills request and redirects to intended URL or `profile.wishlist`, with success flash.
+            *   `verification.send` (POST) resends the verification email (throttled).
+        *   Enforced verification on key flows with `requireVerified`:
+            *   Add/edit/delete wishlist items (e.g., `/add-wish`, `/wish/{wish}/edit`, `/wishlist/{id}`) in [routes/web.php](routes/web.php:58).
+            *   Gift-exchange create/edit/invite/assign/destroy routes in [routes/web.php](routes/web.php:96).
+        *   UI/UX:
+            *   Verification banner component: [resources/views/components/ui/verification-banner.blade.php](resources/views/components/ui/verification-banner.blade.php).
+            *   Unverified homepage prompt: [resources/views/homepage-unverified.blade.php](resources/views/homepage-unverified.blade.php).
+            *   Enhanced navbar integrated into layout at [x-ui.navbar-enhanced](resources/views/components/layout.blade.php:24); component at [resources/views/components/ui/navbar-enhanced.blade.php](resources/views/components/ui/navbar-enhanced.blade.php).
+            *   Flash messages surfaced via notification container in layout ([resources/views/components/layout.blade.php](resources/views/components/layout.blade.php:31)).
     *   **Wishlist Item Delete Bug Fix (August 2025):**
         *   Fixed missing DELETE route for individual wishlist items (`DELETE /wishlist/{id}`)
         *   Updated `WishlistController::destroy()` method to return proper HTML redirects instead of JSON responses
@@ -32,12 +50,12 @@
         *   `WishlistController` now handles multi-wishlist create and update (attach/sync pivot), image upload precedence, URL normalization and shortening, CRUD for user wishlists, and storing to a specific wishlist.
         *   `UserController` creates a default wishlist on register, exposes tab actions `profileWishlist`, `events`, `friends`, `settings`, and `showCorrectHomepage` routes users appropriately.
         *   `GiftExchangeController` handles complete event lifecycle: creation, editing (owner-only), invitation management, participant handling, and secure access controls.
-        *   `routes/web.php` adds named routes for profile tabs, wishlist management routes, and gift-exchange routes with proper middleware separation.
+        *   `routes/web.php` adds named routes for profile tabs, wishlist management routes, gift-exchange routes with proper middleware separation, and email verification routes/guards.
     *   **Views and components:**
         *   `resources/views/add-wish.blade.php` includes multi-select checkbox list of user wishlists with defaults and edit support.
         *   New tab views: `profile-events.blade.php`, `profile-friends.blade.php`, `profile-settings.blade.php`.
         *   Gift exchange views: `gift-exchange.blade.php`, `gift-exchange/show.blade.php`, `gift-exchange/edit.blade.php`, `gift-exchange/invitation.blade.php`, `gift-exchange/invitation-guest.blade.php`, `gift-exchange/invitation-error.blade.php`.
-        *   UI components: `components/ui/tabs.blade.php`, `components/ui/wishlist-group-card.blade.php`, `components/ui/wishlist-management-toolbar.blade.php`.
+        *   UI components: `components/ui/tabs.blade.php`, `components/ui/wishlist-group-card.blade.php`, `components/ui/wishlist-management-toolbar.blade.php`, `components/ui/verification-banner.blade.php`, `components/ui/navbar-enhanced.blade.php`.
     *   **Services and jobs:**
         *   `MetadataScraperService` used during create/edit.
         *   `ShortUrlService` normalizes and shortens URLs.

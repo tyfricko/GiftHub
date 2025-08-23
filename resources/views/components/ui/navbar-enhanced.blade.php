@@ -31,8 +31,8 @@
 
                     <div class="flex items-center space-x-3">
                         <a href="/profile/{{ $user->username }}" class="flex items-center space-x-2 text-neutral-700 hover:text-primary-600 transition-colors duration-fast" aria-label="Open profile">
-                            <img src="{{ $user->avatar ? '/storage/' . $user->avatar : '/fallback-avatar.jpg' }}" 
-                                 alt="{{ $user->username }}" 
+                            <img src="{{ $user->avatar ? '/storage/' . $user->avatar : '/fallback-avatar.jpg' }}"
+                                 alt="{{ $user->username }}"
                                  class="w-8 h-8 rounded-full border-2 border-neutral-200" />
                             <span class="font-medium">{{ $user->username }}</span>
                         </a>

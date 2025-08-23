@@ -75,7 +75,8 @@ class UserController extends Controller {
     public function register(Request $request) {
         
         $incomingFields = $request->validate([
-            'username'  => ['required', 'min:3', 'max:20', Rule::unique('users', 'username')],  
+            'name'      => ['required', 'string', 'max:255'],
+            'username'  => ['required', 'min:3', 'max:20', Rule::unique('users', 'username')],
             'email'     => ['required', 'email', Rule::unique('users', 'email')],
             'password'  => ['required', 'min:6', 'confirmed']
             
@@ -86,8 +87,12 @@ class UserController extends Controller {
         // Create a default wishlist for the new user
         $user->getOrCreateDefaultWishlist();
         
+        // Send email verification notification
+        $user->sendEmailVerificationNotification();
+        
+        // Log the user in and show a clear verification reminder
         auth()->login($user);
-        return redirect('/')->with('success', 'Hvala, ker ste ustvarili račun.');
+        return redirect('/')->with('warning', 'Vaš račun je bil ustvarjen. Preverite svoj e-poštni naslov in potrdite ga, da boste lahko ustvarjali sezname želja in dogodke.');
     }
 
     public function showCorrectHomepage() {
@@ -95,24 +100,15 @@ class UserController extends Controller {
         if(auth()->check()) {
 
             $user = auth()->user();
-            // Check if the user has any wishlist items across all their wishlists
-            $hasWishlistItems = $user->wishlistItems()->exists();
-
-            if($hasWishlistItems) {
-                // Eager load user's wishlists and their associated wishlist items
-                $userWishlists = $user->userWishlists()->with('items')->get();
-
-                return $this->showWishlistForUser($user);
-
-            } else {
-
-                // For now, provide empty collections until activity system is implemented
-                $activities = collect([]);
-                $upcomingExchanges = collect([]);
-                
-                return view('homepage-feed', compact('activities', 'upcomingExchanges'));
-
+            
+            // If user hasn't verified email, show the simplified homepage with only verification message
+            if (!$user->hasVerifiedEmail()) {
+                return view('homepage-unverified');
             }
+            
+            // For verified users, always redirect to their profile wishlist page
+            // This ensures they see the welcome message and can start adding items
+            return $this->showWishlistForUser($user);
         
         } else {
             

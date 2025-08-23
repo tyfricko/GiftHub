@@ -47,6 +47,24 @@
   - Multi-wishlist create/update, URL normalization/shortening, image precedence handled in [app/Http/Controllers/WishlistController.php](app/Http/Controllers/WishlistController.php)
   - Profile tabs and homepage routing in [app/Http/Controllers/UserController.php](app/Http/Controllers/UserController.php)
 
+- Email verification stack:
+  - User model implements verification via [class User extends Authenticatable implements MustVerifyEmail](app/Models/User.php:13)
+  - Middleware aliases configured in [protected $middlewareAliases](app/Http/Kernel.php:55):
+    - Built-in 'verified' alias defined at (line 67)
+    - Custom 'requireVerified' alias for [App\Http\Middleware\RequireEmailVerification](app/Http/Middleware/RequireEmailVerification.php) defined at (line 69)
+  - Custom middleware preserves intended URL and redirects unverified users with a flash message: [public function handle()](app/Http/Middleware/RequireEmailVerification.php:20) (stores url.intended at line 26)
+  - Verification routes in [routes/web.php](routes/web.php):
+    - Notice page (GET): (lines 32-35) -> [resources/views/auth/verify-email.blade.php](resources/views/auth/verify-email.blade.php)
+    - Verify link (GET): (lines 36-48) fulfills request and redirects (uses session('url.intended'))
+    - Resend link (POST): (lines 50-53) throttled
+  - Route gating examples in [routes/web.php](routes/web.php):
+    - Wishlist creation/editing/deletion guarded with 'requireVerified' (lines 58-67)
+    - Gift exchange create/edit/invite/assign/destroy guarded with 'requireVerified' (lines 96-104, 106-108)
+  - UI/UX components and pages:
+    - Verification banner: [resources/views/components/ui/verification-banner.blade.php](resources/views/components/ui/verification-banner.blade.php)
+    - Unverified homepage prompt: [resources/views/homepage-unverified.blade.php](resources/views/homepage-unverified.blade.php)
+    - Enhanced navbar integrated into layout: [resources/views/components/layout.blade.php](resources/views/components/layout.blade.php:24), component [resources/views/components/ui/navbar-enhanced.blade.php](resources/views/components/ui/navbar-enhanced.blade.php)
+
 ## Testing Credentials
 
 - Test User: matej:test123

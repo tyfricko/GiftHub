@@ -119,6 +119,34 @@
 - Vanilla JavaScript solution for dynamic email inputs (no AlpineJS dependency).
 - Proper route naming and parameter handling for invitation responses.
 
+### Email Verification UX & Middleware (August 2025)
+**Status:** Completed  
+**Description:** Implemented full email verification flow with secure gating for wishlist and gift-exchange features, friendly UX, and preservation of intended URLs.
+
+**Files Modified / Added:**
+- [app/Models/User.php](app/Models/User.php:13) — [`class User extends Authenticatable implements MustVerifyEmail`](app/Models/User.php:13) to enable Laravel’s verification features.
+- [app/Http/Middleware/RequireEmailVerification.php](app/Http/Middleware/RequireEmailVerification.php) — [`public function handle()`](app/Http/Middleware/RequireEmailVerification.php:20) stores intended URL (`url.intended`) and redirects unverified users with a warning.
+- [app/Http/Kernel.php](app/Http/Kernel.php:55) — middleware aliases:
+  - [`'verified' => EnsureEmailIsVerified::class`](app/Http/Kernel.php:67)
+  - [`'requireVerified' => App\Http\Middleware\RequireEmailVerification::class`](app/Http/Kernel.php:69)
+- [routes/web.php](routes/web.php:32) — verification routes:
+  - Notice (GET) [`/email/verify`](routes/web.php:32-35) → [resources/views/auth/verify-email.blade.php](resources/views/auth/verify-email.blade.php)
+  - Verify (GET) [`/email/verify/{id}/{hash}`](routes/web.php:36-48) fulfills request and redirects to `session('url.intended')` if present, else to `profile.wishlist`
+  - Resend (POST) [`/email/verification-notification`](routes/web.php:50-53) with throttle
+  - Gated flows using `requireVerified`:
+    - Wishlist: [`/add-wish` + edit/delete](routes/web.php:58-67)
+    - Gift-exchange: create/edit/invite/assign/destroy ([routes/web.php:96-104](routes/web.php:96), [routes/web.php:106-108](routes/web.php:106))
+- [resources/views/components/ui/verification-banner.blade.php](resources/views/components/ui/verification-banner.blade.php) — inline warning with actions (go to verify, resend).
+- [resources/views/homepage-unverified.blade.php](resources/views/homepage-unverified.blade.php) — unverified prompt page with actions.
+- [resources/views/auth/verify-email.blade.php](resources/views/auth/verify-email.blade.php) — verification notice page with resend + logout.
+- [resources/views/components/layout.blade.php](resources/views/components/layout.blade.php:24) — integrated [`x-ui.navbar-enhanced`](resources/views/components/layout.blade.php:24), and surfaced flash messages in the global notification container ([resources/views/components/layout.blade.php](resources/views/components/layout.blade.php:31)).
+
+**Key Improvements:**
+- Enforced verification for critical actions via custom `requireVerified` middleware while keeping public invitation routes accessible.
+- Preserved intended URLs so users return to their original action after verifying.
+- Clear UX: banner, notice page, and unverified homepage with resend options.
+- Consistent flash messaging surfaced in a global notification container.
+- Friendly success redirects after verification with success feedback.
 ## Upcoming Tasks
 
 

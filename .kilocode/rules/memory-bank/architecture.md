@@ -22,7 +22,7 @@ This project is a monolithic web application built with the Laravel framework, f
     *   `profile-events.blade.php`, `profile-friends.blade.php`, `profile-settings.blade.php`: Profile tab pages for events summary, social placeholders, and settings placeholders.
     *   `add-wish.blade.php`: Add/edit wish form with multi-select of user wishlists and URL metadata scrape.
     *   `gift-exchange.blade.php`: Gift exchange dashboard (base).
-    *   Components (resources/views/components/ui/): `tabs.blade.php`, `wishlist-group-card.blade.php`, `wishlist-item-card.blade.php`, `wishlist-management-toolbar.blade.php`, `avatar.blade.php`, `button.blade.php`, `card.blade.php`, etc.
+    *   Components (resources/views/components/ui/): `tabs.blade.php`, `wishlist-group-card.blade.php`, `wishlist-item-card.blade.php`, `wishlist-management-toolbar.blade.php`, `avatar.blade.php`, `button.blade.php`, `card.blade.php`, `verification-banner.blade.php`, `navbar-enhanced.blade.php`, etc.
     *   Modals (resources/views/components/modals/): `create-wishlist-modal.blade.php`, `edit-wishlist-modal.blade.php`.
 
 *   **Controllers:** Located in `app/Http/Controllers/`, these classes handle the application's business logic.
@@ -32,6 +32,11 @@ This project is a monolithic web application built with the Laravel framework, f
     *   `MatchingController.php`: Matching logic for gift assignment (present for future/related flows).
 *   **Policies:** Located in `app/Policies/`.
     *   `UserWishlistPolicy.php`: Authorizes update/delete/addWishlistItem operations on user wishlists.
+
+## Middleware
+
+*   `RequireEmailVerification.php` (custom): Redirects unverified users, preserves intended URL, and flashes a friendly message in [`public function handle()`](app/Http/Middleware/RequireEmailVerification.php:20). Aliased as `requireVerified` in [`protected $middlewareAliases`](app/Http/Kernel.php:55) (see line 69).
+*   Built-in `verified` middleware: Available via alias `verified` in [`protected $middlewareAliases`](app/Http/Kernel.php:55) (see line 67) to gate routes requiring verified emails.
 
 ## Key Services
 

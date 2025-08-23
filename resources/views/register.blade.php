@@ -21,6 +21,17 @@
             />
           </x-ui.form-group>
 
+          <x-ui.form-group label="Username" for="username" error="{{ $errors->first('username') }}">
+            <x-ui.input
+              type="text"
+              name="username"
+              id="username"
+              value="{{ old('username') }}"
+              required
+              placeholder="Choose a username"
+            />
+          </x-ui.form-group>
+
           <x-ui.form-group label="Email" for="email" error="{{ $errors->first('email') }}">
             <x-ui.input
               type="email"

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Wishlist;
 use App\Models\UserWishlist;
 use Laravel\Sanctum\HasApiTokens;
@@ -10,7 +10,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -57,6 +57,27 @@ class User extends Authenticatable
     public function getFullName()
     {
         return trim($this->fullname . ' ' . $this->surname);
+    }
+
+    /**
+     * Get the name attribute (for compatibility with registration form).
+     *
+     * @return string
+     */
+    public function getNameAttribute()
+    {
+        return $this->fullname ?? $this->getFullName();
+    }
+
+    /**
+     * Set the name attribute (maps to fullname for storage).
+     *
+     * @param string $value
+     * @return void
+     */
+    public function setNameAttribute($value)
+    {
+        $this->attributes['fullname'] = $value;
     }
 
     public function userWishlists()
