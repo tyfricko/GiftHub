@@ -16,13 +16,14 @@ This project is a monolithic web application built with the Laravel framework, f
     *   Enums: [`enum WishlistVisibility`](app/Enums/WishlistVisibility.php:5) provides public/private visibility for user wishlists.
 
 *   **Views:** Located in `resources/views/`, these Blade files are responsible for rendering the UI.
-    *   `homepage.blade.php`: The main landing page for guests.
-    *   `homepage-feed.blade.php`: Authenticated feed/landing when the user has no wishlist items yet.
+    *   `homepage-redesigned.blade.php`: The main landing page for guests.
+    *   `homepage-unverified.blade.php`: Unverified user homepage with verification prompts.
     *   `profile-wishlist.blade.php`: Displays a user's multi-wishlist view with grouped items.
-    *   `profile-events.blade.php`, `profile-friends.blade.php`, `profile-settings.blade.php`: Profile tab pages for events summary, social placeholders, and settings placeholders.
+    *   `profile-events.blade.php`: Profile tab page for events summary with full functionality.
+    *   `profile-friends.blade.php`, `profile-settings.blade.php`: Profile tab pages showing removal notices (features temporarily removed).
     *   `add-wish.blade.php`: Add/edit wish form with multi-select of user wishlists and URL metadata scrape.
     *   `gift-exchange.blade.php`: Gift exchange dashboard (base).
-    *   Components (resources/views/components/ui/): `tabs.blade.php`, `wishlist-group-card.blade.php`, `wishlist-item-card.blade.php`, `wishlist-management-toolbar.blade.php`, `avatar.blade.php`, `button.blade.php`, `card.blade.php`, `verification-banner.blade.php`, `navbar-enhanced.blade.php`, etc.
+    *   Components (resources/views/components/ui/): `tabs.blade.php`, `wishlist-group-card.blade.php`, `wishlist-item-card.blade.php`, `wishlist-management-toolbar.blade.php`, `avatar.blade.php`, `button.blade.php`, `card.blade.php`, `verification-banner.blade.php`, `navbar-enhanced.blade.php`, `profile-header.blade.php`, `event-card.blade.php`, `hero.blade.php`, `form-group.blade.php`, `input.blade.php`, `alert.blade.php`, `notification.blade.php`, `empty-state.blade.php`, etc.
     *   Modals (resources/views/components/modals/): `create-wishlist-modal.blade.php`, `edit-wishlist-modal.blade.php`.
 
 *   **Controllers:** Located in `app/Http/Controllers/`, these classes handle the application's business logic.

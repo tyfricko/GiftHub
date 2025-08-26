@@ -165,6 +165,8 @@
 - `resources/views/profile-settings.blade.php`
 - Update `resources/views/profile-wishlist.blade.php` navigation
 
+**Note:** Friends and Settings tabs have been temporarily removed with placeholder pages - routes and controller methods still exist but pages show removal notices. Events tab is fully functional with proper event listing and creation flow integration. Consider removing unused routes/controller methods for friends/settings or implementing proper functionality.
+
 ### Phase 3: Social Features
 **Priority:** Medium
 **Estimated Effort:** 2-3 weeks
