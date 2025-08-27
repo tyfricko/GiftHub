@@ -100,7 +100,7 @@ Thank you for considering contributing to the GiftHub application! The contribut
 
 ## Security Vulnerabilities
 
-If you discover a security vulnerability within GiftHub, please send an e-mail to [your-email@example.com] (mailto:your-email@example.com). All security vulnerabilities will be promptly addressed.
+If you discover a security vulnerability within GiftHub, please send an e-mail to [info@matejzlatic.com](mailto:info@matejzlatic.com). All security vulnerabilities will be promptly addressed.
 
 ## License
 
