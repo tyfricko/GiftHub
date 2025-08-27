@@ -18,12 +18,9 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+/.kilocode/*
 # IDE/Editor specific files
-.kilocode
-.kilocode/rules
-.kilocode/rules/memory-bank
 .kilocodemodes
-# Random files
 Code_Audit_Report.md
 phpunit.xml
 shipping-address-specification.md
