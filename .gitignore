@@ -18,7 +18,7 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
-/.kilocode/*
+/.kilocode/
 # IDE/Editor specific files
 .kilocodemodes
 Code_Audit_Report.md
