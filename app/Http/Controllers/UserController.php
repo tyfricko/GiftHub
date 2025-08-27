@@ -149,6 +149,9 @@ class UserController extends Controller {
 
             $userWishlists = $user->userWishlists;
             $wishes = $user->wishlistItems->sortByDesc('created_at');
+            
+            // Get pending invitations count for badge (only for own profile)
+            $pendingInvitationsCount = $user->getPendingInvitationsCount();
         } else {
             // Only show PUBLIC wishlists (and their items) to other users
             $userWishlists = $user->userWishlists()
@@ -165,12 +168,15 @@ class UserController extends Controller {
                 })
                 ->sortByDesc('created_at')
                 ->values();
+                
+            $pendingInvitationsCount = 0; // Don't show badges on other users' profiles
         }
 
         return view('profile-wishlist', [
             'user' => $user->fresh(),
             'userWishlists' => $userWishlists,
             'wishes' => $wishes,
+            'pendingInvitationsCount' => $pendingInvitationsCount,
             'activeTab' => 'wishlists'
         ]);
     }
@@ -212,12 +218,18 @@ class UserController extends Controller {
             'createEvent' => route('gift-exchange.create.form'),
         ];
 
+        // Pending invitations for this user's email (may include invitations created before user registered)
+        $pendingInvitations = $user->getPendingInvitations();
+        $pendingInvitationsCount = $user->getPendingInvitationsCount();
+
         return view('profile-events', [
             'user' => $user,
             'createdEvents' => $createdEvents,
             'participatingEvents' => $participatingEvents,
             'counts' => $counts,
             'links' => $links,
+            'pendingInvitations' => $pendingInvitations,
+            'pendingInvitationsCount' => $pendingInvitationsCount,
             'activeTab' => 'events'
         ]);
     }

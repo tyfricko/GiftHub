@@ -96,6 +96,22 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/gift-exchange/create', [GiftExchangeController::class, 'showCreateForm'])->middleware('requireVerified')->name('gift-exchange.create.form');
     Route::post('/gift-exchange/create', [GiftExchangeController::class, 'createEventWeb'])->middleware('requireVerified')->name('gift-exchange.create');
     Route::post('/gift-exchange/{event}/invite', [GiftExchangeController::class, 'inviteParticipantsWeb'])->middleware('requireVerified')->name('gift-exchange.invite');
+
+    // In-app invitation response routes (authenticated users)
+    Route::post('/invitations/{invitation}/accept', [GiftExchangeController::class, 'acceptInvitationFromDashboard'])
+        ->name('invitations.accept');
+
+    Route::post('/invitations/{invitation}/decline', [GiftExchangeController::class, 'declineInvitationFromDashboard'])
+        ->name('invitations.decline');
+
+    // Shipping address collection for participants (when event requires it)
+    Route::get('/gift-exchange/{event}/shipping-address', [GiftExchangeController::class, 'showShippingAddressForm'])
+        ->middleware('requireVerified')
+        ->name('gift-exchange.shipping-address');
+
+    Route::post('/gift-exchange/{event}/shipping-address', [GiftExchangeController::class, 'updateShippingAddress'])
+        ->middleware('requireVerified')
+        ->name('gift-exchange.shipping-address.update');
     // View a specific event's dashboard (avoid collision with /invitations/* routes)
     Route::get('/gift-exchange/{event}/dashboard', [GiftExchangeController::class, 'show'])->name('gift-exchange.show');
     // Edit / Update event (owner-only — enforced in controller)

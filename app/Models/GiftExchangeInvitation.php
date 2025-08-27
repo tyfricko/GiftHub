@@ -18,6 +18,11 @@ class GiftExchangeInvitation extends Model
         'responded_at',
     ];
 
+    protected $casts = [
+        'sent_at' => 'datetime',
+        'responded_at' => 'datetime',
+    ];
+
     public function event()
     {
         return $this->belongsTo(GiftExchangeEvent::class, 'event_id');

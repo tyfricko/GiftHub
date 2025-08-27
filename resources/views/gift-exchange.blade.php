@@ -69,10 +69,18 @@
               </x-ui.form-group>
             </div>
 
-            <div class="flex justify-end">
-              <x-ui.button type="submit">
-                <i class="fa fa-plus mr-2"></i> Create Event
-              </x-ui.button>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <label class="inline-flex items-center text-sm">
+                  <input type="checkbox" name="requires_shipping_address" value="1" class="form-checkbox mr-2">
+                  Require shipping addresses for this event
+                </label>
+              </div>
+              <div class="flex justify-end">
+                <x-ui.button type="submit">
+                  <i class="fa fa-plus mr-2"></i> Create Event
+                </x-ui.button>
+              </div>
             </div>
           </form>
         </x-ui.card>

@@ -1,6 +1,6 @@
 
 @extends('components.layout')
-
+ 
 @section('content')
 <div class="container mx-auto px-6">
     <!-- Profile Header -->
@@ -15,16 +15,17 @@
         <h1 class="text-3xl lg:text-4xl font-extrabold text-neutral-900">Welcome, {{ auth()->user()->fullname ?? auth()->user()->username }}!</h1>
         <p class="text-body text-neutral-600 mt-2">This is your personal space to manage your wishlists and gift exchanges.</p>
     </div>
-
+ 
     <!-- Profile Tabs -->
     @php
         $profileTabs = [
             ['key' => 'wishlists', 'label' => 'My Wishlist', 'url' => route('profile.wishlist')],
-            ['key' => 'events',    'label' => 'My Events',   'url' => route('profile.events')],
+            // Attach badge to events tab when pending invitations exist (controller provides pendingInvitationsCount)
+            ['key' => 'events',    'label' => 'My Events',   'url' => route('profile.events'), 'badge' => $pendingInvitationsCount ?? 0],
         ];
     @endphp
     <x-ui.tabs :tabs="$profileTabs" :active="'events'" />
-
+ 
     <!-- Toolbar -->
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-semibold text-neutral-900">My Events</h2>
@@ -42,13 +43,44 @@
         </div>
     </div>
 
+    <!-- Pending Invitations -->
+    @if(!empty($pendingInvitations) && $pendingInvitations->count() > 0)
+        <div class="mb-6">
+            <h3 class="text-xl font-semibold mb-3">Pending Invitations</h3>
+            <div class="space-y-3">
+                @foreach($pendingInvitations as $invitation)
+                    <x-ui.card>
+                        <div class="flex items-start justify-between">
+                            <div class="pr-4">
+                                <div class="text-sm text-neutral-600">From: {{ $invitation->event->creator->fullname ?? $invitation->event->creator->username ?? 'Organizer' }}</div>
+                                <div class="text-lg font-semibold">{{ $invitation->event->name }}</div>
+                                <div class="text-sm text-neutral-500 mt-1">{{ Illuminate\Support\Str::limit($invitation->event->description ?? '', 140) }}</div>
+                                <div class="text-xs text-neutral-400 mt-2">Sent: {{ $invitation->sent_at ? $invitation->sent_at->diffForHumans() : 'N/A' }}</div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <form method="POST" action="{{ route('invitations.accept', $invitation->id) }}">
+                                    @csrf
+                                    <button type="submit" class="px-3 py-1 bg-primary-600 text-white rounded-md">Accept</button>
+                                </form>
+                                <form method="POST" action="{{ route('invitations.decline', $invitation->id) }}">
+                                    @csrf
+                                    <button type="submit" class="px-3 py-1 bg-white border border-neutral-200 text-neutral-700 rounded-md">Decline</button>
+                                </form>
+                            </div>
+                        </div>
+                    </x-ui.card>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     <!-- Events Items -->
     <div class="space-y-6">
         @php
             $hasCreated = !($createdEvents ?? collect())->isEmpty();
             $hasParticipating = !($participatingEvents ?? collect())->isEmpty();
         @endphp
-
+ 
         @if(!$hasCreated && !$hasParticipating)
             <x-ui.card class="text-center py-12">
                 <div class="text-neutral-600">
@@ -65,14 +97,14 @@
         @endif
     </div>
 </div>
-
-
+ 
+ 
 <script>
     // Notifications are handled by the global NotificationManager.
     // Use showNotification(message, type) or the backward compatible showToast(message, type).
-
+ 
     document.addEventListener('DOMContentLoaded', function() {
     });
 </script>
-
+ 
 @endsection

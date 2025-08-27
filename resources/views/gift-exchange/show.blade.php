@@ -2,6 +2,18 @@
   <div class="container mx-auto px-6 sm:px-6 lg:px-8 py-6 space-y-6">
     <x-ui.profile-header :user="auth()->user()" :isOwnProfile="true" />
 
+    @php
+        $participant = null;
+        if (auth()->check()) {
+            $participant = $participants->firstWhere('user_id', auth()->id());
+        }
+    @endphp
+
+    {{-- Shipping address banner for participants who need to provide address --}}
+    <div class="mt-4">
+        <x-ui.shipping-address-banner :event="$event" :participant="$participant" />
+    </div>
+
     <div class="flex items-start justify-between gap-4">
       <div>
         <h1 class="text-2xl font-semibold text-gray-900">{{ $event->name }}</h1>
@@ -41,7 +53,7 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <x-ui.card>
         <div class="flex items-center justify-between">
           <div>
@@ -58,6 +70,9 @@
           </div>
         </div>
       </x-ui.card>
+      <div>
+        <x-ui.shipping-progress :event="$event" :participants="$participants" />
+      </div>
     </div>
 
     <div class="space-y-6">

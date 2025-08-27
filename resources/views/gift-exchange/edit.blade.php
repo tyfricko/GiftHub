@@ -50,6 +50,13 @@
           </x-ui.form-group>
         </div>
 
+        <div class="mt-2">
+          <label class="inline-flex items-center">
+            <input type="checkbox" name="requires_shipping_address" value="1" class="form-checkbox mr-2" {{ $event->requires_shipping_address ? 'checked' : '' }}>
+            Require shipping addresses for this event
+          </label>
+        </div>
+
         <div class="flex justify-end gap-2">
           <x-ui.button as="a" href="{{ route('gift-exchange.show', $event->id) }}" variant="secondary">Cancel</x-ui.button>
           <x-ui.button type="submit"><i class="fa fa-save mr-2"></i> Save Changes</x-ui.button>

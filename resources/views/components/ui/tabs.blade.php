@@ -8,15 +8,21 @@
         @foreach ($tabs as $tab)
             @php
                 $isActive = $tab['key'] === $active;
-                $baseClasses = 'px-3 py-2 font-semibold text-sm rounded-t-md focus:outline-none focus:ring-2 focus:ring-accent';
+                $baseClasses = 'px-3 py-2 font-semibold text-sm rounded-t-md focus:outline-none focus:ring-2 focus:ring-accent inline-flex items-center';
                 $activeClasses = $isActive
                     ? 'bg-neutral-white border border-b-0 border-neutral-gray text-primary'
                     : 'text-neutral-gray hover:text-primary hover:bg-neutral-light';
+                $badge = $tab['badge'] ?? 0;
             @endphp
             <a href="{{ $tab['url'] ?? '#' }}"
                class="{{ $baseClasses }} {{ $activeClasses }}"
                aria-current="{{ $isActive ? 'page' : false }}">
-                {{ $tab['label'] }}
+                <span>{{ $tab['label'] }}</span>
+                @if(!empty($badge) && $badge > 0)
+                    <span class="notification-badge">
+                        {{ $badge > 99 ? '99+' : $badge }}
+                    </span>
+                @endif
             </a>
         @endforeach
     </nav>

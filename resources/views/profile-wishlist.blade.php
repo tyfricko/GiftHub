@@ -28,7 +28,7 @@
     @php
         $profileTabs = [
             ['key' => 'wishlists', 'label' => 'My Wishlist', 'url' => route('profile.wishlist')],
-            ['key' => 'events',    'label' => 'My Events',   'url' => route('profile.events')],
+            ['key' => 'events',    'label' => 'My Events',   'url' => route('profile.events'), 'badge' => $pendingInvitationsCount ?? 0],
         ];
     @endphp
     <x-ui.tabs :tabs="$profileTabs" :active="$activeTab ?? 'wishlists'" />

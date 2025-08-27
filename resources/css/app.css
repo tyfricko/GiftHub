@@ -525,3 +525,6 @@ textarea.tall-textarea {
 
 /* Smooth stacking gap */
 #notifications { display: flex; flex-direction: column-reverse; gap: 10px; align-items: flex-end; }
+
+/* Matej - my Custom CSS */
+.notification-badge { display: flex;   justify-content: center;   margin-left: 15px;   background: red;   width: 20px;   height: 20px;   border-radius: 6px;   color: #ffffff; font-size: 12px; }

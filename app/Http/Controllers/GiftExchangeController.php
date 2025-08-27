@@ -153,6 +153,23 @@ class GiftExchangeController extends Controller
             return response()->json(['error' => 'At least 2 participants are required for assignment.'], 400);
         }
 
+        // If the event requires shipping addresses, ensure all accepted participants have provided one.
+        if ($event->requiresShippingAddress()) {
+            $missing = $participants->filter(function ($p) {
+                return !$p->hasShippingAddress();
+            });
+
+            if ($missing->count() > 0) {
+                $message = 'Cannot create assignments: ' . $missing->count() . ' participant(s) have not provided shipping addresses.';
+                // If request expects JSON, return JSON error, otherwise redirect back to event page with error.
+                if ($request->wantsJson() || $request->expectsJson()) {
+                    return response()->json(['error' => $message, 'missing_count' => $missing->count()], 400);
+                }
+                return redirect()->route('gift-exchange.show', $event->id)
+                                 ->with('error', $message);
+            }
+        }
+
         // Use transaction to ensure atomicity
         $assignments = [];
         try {
@@ -317,6 +334,7 @@ public function getAssignments($eventId)
             'description' => 'nullable|string',
             'end_date' => 'required|date|after:now',
             'budget_max' => 'nullable|numeric|min:0',
+            'requires_shipping_address' => 'boolean', // Add this
         ]);
 
         $event->update([
@@ -324,6 +342,7 @@ public function getAssignments($eventId)
             'description' => $validated['description'] ?? null,
             'end_date' => $validated['end_date'],
             'budget_max' => $validated['budget_max'] ?? null,
+            'requires_shipping_address' => $validated['requires_shipping_address'] ?? $event->requires_shipping_address, // Add this
         ]);
 
         return redirect()->route('gift-exchange.show', $event->id)->with('success', 'Event updated successfully!');
@@ -335,6 +354,7 @@ public function getAssignments($eventId)
             'description' => 'nullable|string',
             'end_date' => 'required|date|after:now',
             'budget_max' => 'nullable|numeric|min:0',
+            'requires_shipping_address' => 'boolean', // Add this
         ]);
 
         $user = $request->user();
@@ -345,6 +365,7 @@ public function getAssignments($eventId)
             'end_date' => $validated['end_date'],
             'budget_max' => $validated['budget_max'] ?? null,
             'created_by' => $user->id,
+            'requires_shipping_address' => $validated['requires_shipping_address'] ?? false, // Add this
         ]);
 
         \App\Models\GiftExchangeParticipant::create([
@@ -452,6 +473,11 @@ public function getAssignments($eventId)
                     'was_recently_created' => $participant->wasRecentlyCreated
                 ]);
                 
+                if ($participant->needsShippingAddress()) {
+                    return redirect()->route('gift-exchange.shipping-address', $invitation->event_id)
+                                     ->with('info', 'Please provide your shipping address to complete your participation.');
+                }
+                
                 return redirect()->route('profile.events')->with('success', 'Invitation accepted! You are now a participant.');
             } else {
                 // TODO: Handle new user registration flow
@@ -462,6 +488,134 @@ public function getAssignments($eventId)
         } else {
             return redirect()->route('login')->with('info', 'Invitation declined.');
         }
+    }
+
+    /**
+     * Accept an invitation from the authenticated user's dashboard.
+     *
+     * This endpoint is intended for in-app responses. It validates that the
+     * authenticated user's email matches the invitation email and that the
+     * invitation is still pending before marking it accepted and creating a participant.
+     */
+    public function acceptInvitationFromDashboard(Request $request, GiftExchangeInvitation $invitation)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return redirect()->route('login')->with('info', 'Please log in to respond to invitations.');
+        }
+
+        if ($user->email !== $invitation->email) {
+            return redirect()->route('gift-exchange.invitationError');
+        }
+
+        if ($invitation->status !== 'pending') {
+            return redirect()->route('profile.events')->with('info', 'This invitation has already been responded to.');
+        }
+
+        // Mark invitation accepted
+        $invitation->status = 'accepted';
+        $invitation->responded_at = now();
+        $invitation->save();
+
+        // Add participant record if not already present
+        $participant = GiftExchangeParticipant::firstOrCreate([
+            'event_id' => $invitation->event_id,
+            'user_id' => $user->id,
+        ], [
+            'status' => 'accepted',
+            'joined_at' => now(),
+        ]);
+
+        \Log::info('Participant created/found via dashboard', [
+            'participant_id' => $participant->id,
+            'event_id' => $invitation->event_id,
+            'user_id' => $user->id,
+            'was_recently_created' => $participant->wasRecentlyCreated
+        ]);
+
+        if ($participant->needsShippingAddress()) {
+            return redirect()->route('gift-exchange.shipping-address', $invitation->event_id)
+                             ->with('info', 'Please provide your shipping address to complete your participation.');
+        }
+
+        return redirect()->route('profile.events')->with('success', 'Invitation accepted! You are now a participant.');
+    }
+
+    /**
+     * Decline an invitation from the authenticated user's dashboard.
+     */
+    public function declineInvitationFromDashboard(Request $request, GiftExchangeInvitation $invitation)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return redirect()->route('login')->with('info', 'Please log in to respond to invitations.');
+        }
+
+        if ($user->email !== $invitation->email) {
+            return redirect()->route('gift-exchange.invitationError');
+        }
+
+        if ($invitation->status !== 'pending') {
+            return redirect()->route('profile.events')->with('info', 'This invitation has already been responded to.');
+        }
+
+        $invitation->status = 'declined';
+        $invitation->responded_at = now();
+        $invitation->save();
+
+        return redirect()->route('profile.events')->with('success', 'Invitation declined.');
+    }
+    /**
+     * Show the shipping address form for a participant.
+     */
+    public function showShippingAddressForm(Request $request, GiftExchangeEvent $event)
+    {
+        $user = $request->user();
+
+        // If the event does not require shipping addresses, redirect back politely.
+        if (!method_exists($event, 'requiresShippingAddress') || !$event->requiresShippingAddress()) {
+            return redirect()->route('gift-exchange.show', $event->id)
+                             ->with('info', 'This event does not require shipping addresses.');
+        }
+
+        $participant = $event->participants()->where('user_id', $user->id)->first();
+        if (!$participant || $participant->status !== 'accepted') {
+            abort(403, 'You are not authorized to provide an address for this event.');
+        }
+
+        return view('gift-exchange.shipping-address', compact('event', 'participant'));
+    }
+
+    /**
+     * Update the shipping address for a participant.
+     *
+     * Uses a dedicated FormRequest for robust validation and authorization.
+     */
+    public function updateShippingAddress(\App\Http\Requests\GiftExchangeShippingAddressRequest $request, GiftExchangeEvent $event)
+    {
+        $user = $request->user();
+        $participant = $event->participants()->where('user_id', $user->id)->firstOrFail();
+
+        $validated = $request->validated();
+
+        try {
+            $participant->shipping_address = $validated;
+            $participant->shipping_address_completed_at = now();
+            $participant->save();
+        } catch (\Exception $e) {
+            \Log::error('Failed to save shipping address', [
+                'event_id' => $event->id,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('gift-exchange.shipping-address', $event->id)
+                             ->with('error', 'Failed to save shipping address. Please try again.');
+        }
+
+        return redirect()->route('gift-exchange.show', $event->id)->with('success', 'Shipping address saved successfully!');
     }
 
     /**

@@ -12,11 +12,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
+        // Create the test user (matej:test123) as mentioned in memory bank
+        \App\Models\User::factory()->create([
+            'name' => 'Matej Test',
+            'username' => 'matej',
+            'email' => 'matej@test.com',
+            'password' => bcrypt('test123'),
+            'email_verified_at' => now(),
+        ]);
 
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+        // Optionally create additional test users
+        // \App\Models\User::factory(5)->create();
     }
 }

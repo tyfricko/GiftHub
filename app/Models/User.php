@@ -20,6 +20,7 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var array<int, string>
      */
     protected $fillable = [
+        'name',
         'username',
         'fullname',
         'surname',
@@ -109,5 +110,35 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return $defaultWishlist;
+    }
+
+    /**
+     * Return pending GiftExchangeInvitation models for this user's email.
+     *
+     * These are invitations where the email matches this user's email and the
+     * invitation status is still 'pending'. Eager-load the related event and
+     * the event creator for display purposes.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public function getPendingInvitations()
+    {
+        return \App\Models\GiftExchangeInvitation::where('email', $this->email)
+            ->where('status', 'pending')
+            ->with(['event', 'event.creator'])
+            ->orderByDesc('sent_at')
+            ->get();
+    }
+
+    /**
+     * Return count of pending invitations for this user's email.
+     *
+     * @return int
+     */
+    public function getPendingInvitationsCount()
+    {
+        return \App\Models\GiftExchangeInvitation::where('email', $this->email)
+            ->where('status', 'pending')
+            ->count();
     }
 }
