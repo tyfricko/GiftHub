@@ -23,6 +23,7 @@ yarn-error.log
 .kilocode/rules
 .kilocode/rules/memory-bank
 .kilocodemodes
+# Random files
 Code_Audit_Report.md
 phpunit.xml
 shipping-address-specification.md
