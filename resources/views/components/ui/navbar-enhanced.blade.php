@@ -19,8 +19,9 @@
             <!-- Desktop Navigation -->
             @if ($user)
                 <div class="hidden md:flex items-center space-x-8" role="navigation" aria-label="Primary navigation">
-                    <a href="/wishlist" class="text-neutral-700 hover:text-primary-600 font-medium transition-colors duration-fast">My Wishlist</a>
-                    <a href="/profile/{{ $user->username }}" class="text-neutral-700 hover:text-primary-600 font-medium transition-colors duration-fast">Profile</a>
+                    <a href="{{ route('wishlist.index') }}" class="text-neutral-700 hover:text-primary-600 font-medium transition-colors duration-fast">My Wishlist</a>
+                    <a href="{{ route('profile.events') }}" class="text-neutral-700 hover:text-primary-600 font-medium transition-colors duration-fast">My Events</a>
+                    <a href="{{ route('profile.manage') }}" class="text-neutral-700 hover:text-primary-600 font-medium transition-colors duration-fast">Manage Profile</a>
                 </div>
             @endif
 
@@ -66,9 +67,9 @@
         <div class="md:hidden" x-show="mobileMenuOpen" @click.away="mobileMenuOpen = false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-2" aria-hidden="false">
             <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-neutral-200" role="menu" aria-label="Mobile primary">
                 @if ($user)
-                    <a href="/wishlist" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">My Wishlist</a>
-                    <a href="/explore" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">Explore</a>
-                    <a href="/profile/{{ $user->username }}" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">Profile</a>
+                    <a href="{{ route('wishlist.index') }}" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">My Wishlist</a>
+                    <a href="{{ route('profile.events') }}" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">My Events</a>
+                    <a href="{{ route('profile.manage') }}" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">Manage Profile</a>
                     <a href="/add-wish" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">Add Wish</a>
                     <form action="/logout" method="POST" class="block px-3 py-2" role="none">
                         @csrf

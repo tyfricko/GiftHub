@@ -28,9 +28,10 @@
             
             @if($isOwnProfile)
                 <x-ui.button
+                    as="a"
                     variant="secondary"
                     size="sm"
-                    onclick="window.location.href='/manage-avatar'"
+                    href="{{ route('profile.manage') }}"
                 >
                     Uredi podatke Profila
                 </x-ui.button>

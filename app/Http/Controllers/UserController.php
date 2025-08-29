@@ -26,14 +26,20 @@ class UserController extends Controller {
 
     public function updateProfile(Request $request) {
         $user = auth()->user();
-        
-        $incomingFields = $request->validate([
+
+        $validationRules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
-            'username' => ['required', 'string', 'min:3', 'max:20', Rule::unique('users', 'username')->ignore($user->id)],
-            'address' => ['nullable', 'string', 'max:500'],
             'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048']
-        ]);
+        ];
+
+        // Add password validation only if current password is provided
+        if ($request->filled('current_password')) {
+            $validationRules['current_password'] = ['required', 'current_password'];
+            $validationRules['password'] = ['required', 'min:6', 'confirmed'];
+        }
+
+        $incomingFields = $request->validate($validationRules);
 
         // Handle avatar upload if provided
         if ($request->hasFile('avatar')) {
@@ -42,8 +48,13 @@ class UserController extends Controller {
             $incomingFields['avatar'] = $avatarPath;
         }
 
-        // Update user profile
-        $user->update($incomingFields);
+        // Update password if provided
+        if ($request->filled('password')) {
+            $incomingFields['password'] = bcrypt($request->password);
+        }
+
+        // Update user profile (excluding password fields from mass assignment)
+        $user->update(collect($incomingFields)->except(['current_password', 'password_confirmation'])->toArray());
 
         return redirect()->route('profile.show', $user)->with('success', 'Profile updated successfully!');
     }

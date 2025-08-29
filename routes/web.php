@@ -51,8 +51,8 @@ Route::post('/email/verification-notification', function (Request $request) {
     $request->user()->sendEmailVerificationNotification();
     return back()->with('message', 'Povezava za potrditev je bila poslana!');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
-Route::get('/manage-avatar', [UserController::class, "showProfileForm"])->middleware(['mustBeLoggedIn', 'verified'])->name('profile.update');
-Route::put('/manage-avatar', [UserController::class, "updateProfile"])->middleware(['mustBeLoggedIn', 'verified'])->name('profile.update');
+Route::get('/manage-profile', [UserController::class, "showProfileForm"])->middleware(['mustBeLoggedIn', 'verified'])->name('profile.manage');
+Route::put('/manage-profile', [UserController::class, "updateProfile"])->middleware(['mustBeLoggedIn', 'verified'])->name('profile.manage');
 
 // Wishlist Routes
 Route::get('/add-wish', [WishlistController::class, "showCreateForm"])->middleware(['mustBeLoggedIn', 'requireVerified']);
