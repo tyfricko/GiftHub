@@ -17,19 +17,19 @@
             <div>
                 <h3 class="text-title font-semibold text-neutral-900 mb-4">Quick Links</h3>
                 <ul class="space-y-2">
-                    <li><a href="/about" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">About</a></li>
-                    <li><a href="/how-it-works" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">How It Works</a></li>
-                    <li><a href="/pricing" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">Pricing</a></li>
-                    <li><a href="/contact" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">Contact</a></li>
+                    <li><a href="{{ route('pages.about') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">About</a></li>
+                    <li><a href="{{ route('pages.how-it-works') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">How It Works</a></li>
+                    <li><a href="{{ route('pages.pricing') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">Pricing</a></li>
+                    <li><a href="{{ route('pages.contact') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">Contact</a></li>
                 </ul>
             </div>
 
             <div>
                 <h3 class="text-title font-semibold text-neutral-900 mb-4">Legal</h3>
                 <ul class="space-y-2">
-                    <li><a href="/privacy" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">Privacy Policy</a></li>
-                    <li><a href="/terms" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">Terms of Service</a></li>
-                    <li><a href="/cookies" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">Cookie Policy</a></li>
+                    <li><a href="{{ route('pages.privacy') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">Privacy Policy</a></li>
+                    <li><a href="{{ route('pages.terms') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">Terms of Service</a></li>
+                    <li><a href="{{ route('pages.cookies') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">Cookie Policy</a></li>
                 </ul>
             </div>
         </div>

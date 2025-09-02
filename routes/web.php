@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\PageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -53,6 +54,15 @@ Route::post('/email/verification-notification', function (Request $request) {
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
 Route::get('/manage-profile', [UserController::class, "showProfileForm"])->middleware(['mustBeLoggedIn', 'verified'])->name('profile.manage');
 Route::put('/manage-profile', [UserController::class, "updateProfile"])->middleware(['mustBeLoggedIn', 'verified'])->name('profile.manage');
+
+// Static Pages (public access)
+Route::get('/about', [PageController::class, 'about'])->name('pages.about');
+Route::get('/how-it-works', [PageController::class, 'howItWorks'])->name('pages.how-it-works');
+Route::get('/pricing', [PageController::class, 'pricing'])->name('pages.pricing');
+Route::get('/contact', [PageController::class, 'contact'])->name('pages.contact');
+Route::get('/privacy', [PageController::class, 'privacy'])->name('pages.privacy');
+Route::get('/terms', [PageController::class, 'terms'])->name('pages.terms');
+Route::get('/cookies', [PageController::class, 'cookies'])->name('pages.cookies');
 
 // Wishlist Routes
 Route::get('/add-wish', [WishlistController::class, "showCreateForm"])->middleware(['mustBeLoggedIn', 'requireVerified']);
