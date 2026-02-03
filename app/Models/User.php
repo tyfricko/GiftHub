@@ -3,12 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Models\Wishlist;
-use App\Models\UserWishlist;
-use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -57,7 +55,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getFullName()
     {
-        return trim($this->fullname . ' ' . $this->surname);
+        return trim($this->fullname.' '.$this->surname);
     }
 
     /**
@@ -73,7 +71,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Set the name attribute (maps to fullname for storage).
      *
-     * @param string $value
+     * @param  string  $value
      * @return void
      */
     public function setNameAttribute($value)
@@ -100,7 +98,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $defaultWishlist = $this->getDefaultWishlist();
 
-        if (!$defaultWishlist) {
+        if (! $defaultWishlist) {
             $defaultWishlist = $this->userWishlists()->create([
                 'name' => 'My Wishlist',
                 'description' => 'My default wishlist',

@@ -3,88 +3,167 @@
 @section('title', 'Shipping Address')
 
 @section('content')
-<div class="max-w-3xl mx-auto py-8">
-    <h1 class="text-2xl font-semibold mb-4">Provide your shipping address</h1>
-
-    @if(session('info'))
-        <div class="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800">
-            {{ session('info') }}
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="mb-4 p-3 bg-red-50 border-l-4 border-red-400 text-red-800">
-            {{ session('error') }}
-        </div>
-    @endif
-
-    <form method="POST" action="{{ route('gift-exchange.shipping-address.update', $event->id) }}">
-        @csrf
-
-        @php
-            $addr = $participant->shipping_address ?? [];
-        @endphp
-
-        <div class="grid grid-cols-1 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Full name</label>
-                <input type="text" name="full_name" value="{{ old('full_name', $addr['full_name'] ?? $participant->user->name ?? '') }}" class="mt-1 block w-full border rounded p-2" />
-                @error('full_name') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+<div class="px-4 sm:px-6 lg:px-8 py-6">
+    <div class="max-w-2xl mx-auto">
+        <x-ui.card>
+            <div class="mb-6">
+                <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                    Provide your shipping address
+                </h1>
+                <p class="mt-1 text-neutral-600 dark:text-neutral-400">
+                    Please enter your shipping details for this gift exchange event.
+                </p>
             </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Address line 1</label>
-                <input type="text" name="address_line_1" value="{{ old('address_line_1', $addr['address_line_1'] ?? '') }}" class="mt-1 block w-full border rounded p-2" />
-                @error('address_line_1') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
-            </div>
+            @if(session('info'))
+                <x-ui.alert type="info" class="mb-6">
+                    {{ session('info') }}
+                </x-ui.alert>
+            @endif
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Address line 2 (optional)</label>
-                <input type="text" name="address_line_2" value="{{ old('address_line_2', $addr['address_line_2'] ?? '') }}" class="mt-1 block w-full border rounded p-2" />
-                @error('address_line_2') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
-            </div>
+            @if(session('error'))
+                <x-ui.alert type="error" class="mb-6">
+                    {{ session('error') }}
+                </x-ui.alert>
+            @endif
 
-            <div class="grid grid-cols-3 gap-3">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">City</label>
-                    <input type="text" name="city" value="{{ old('city', $addr['city'] ?? '') }}" class="mt-1 block w-full border rounded p-2" />
-                    @error('city') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+            <form method="POST" action="{{ route('gift-exchange.shipping-address.update', $event->id) }}">
+                @csrf
+
+                @php
+                    $addr = $participant->shipping_address ?? [];
+                @endphp
+
+                <div class="space-y-6">
+                    <x-ui.form-group label="Full name" for="full_name">
+                        <x-ui.input 
+                            type="text" 
+                            name="full_name" 
+                            id="full_name" 
+                            :value="old('full_name', $addr['full_name'] ?? $participant->user->name ?? '')"
+                            placeholder="Enter your full name"
+                        />
+                        @error('full_name')
+                            <x-ui.alert type="error" class="mt-2">{{ $message }}</x-ui.alert>
+                        @enderror
+                    </x-ui.form-group>
+
+                    <x-ui.form-group label="Address line 1" for="address_line_1" required>
+                        <x-ui.input 
+                            type="text" 
+                            name="address_line_1" 
+                            id="address_line_1" 
+                            :value="old('address_line_1', $addr['address_line_1'] ?? '')"
+                            placeholder="Street address, P.O. box, etc."
+                        />
+                        @error('address_line_1')
+                            <x-ui.alert type="error" class="mt-2">{{ $message }}</x-ui.alert>
+                        @enderror
+                    </x-ui.form-group>
+
+                    <x-ui.form-group label="Address line 2 (optional)" for="address_line_2">
+                        <x-ui.input 
+                            type="text" 
+                            name="address_line_2" 
+                            id="address_line_2" 
+                            :value="old('address_line_2', $addr['address_line_2'] ?? '')"
+                            placeholder="Apartment, suite, unit, building, floor, etc."
+                        />
+                        @error('address_line_2')
+                            <x-ui.alert type="error" class="mt-2">{{ $message }}</x-ui.alert>
+                        @enderror
+                    </x-ui.form-group>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <x-ui.form-group label="City" for="city" required>
+                            <x-ui.input 
+                                type="text" 
+                                name="city" 
+                                id="city" 
+                                :value="old('city', $addr['city'] ?? '')"
+                                placeholder="City"
+                            />
+                            @error('city')
+                                <x-ui.alert type="error" class="mt-2">{{ $message }}</x-ui.alert>
+                            @enderror
+                        </x-ui.form-group>
+
+                        <x-ui.form-group label="State / Province" for="state_province" required>
+                            <x-ui.input 
+                                type="text" 
+                                name="state_province" 
+                                id="state_province" 
+                                :value="old('state_province', $addr['state_province'] ?? '')"
+                                placeholder="State/Province"
+                            />
+                            @error('state_province')
+                                <x-ui.alert type="error" class="mt-2">{{ $message }}</x-ui.alert>
+                            @enderror
+                        </x-ui.form-group>
+
+                        <x-ui.form-group label="Postal code" for="postal_code" required>
+                            <x-ui.input 
+                                type="text" 
+                                name="postal_code" 
+                                id="postal_code" 
+                                :value="old('postal_code', $addr['postal_code'] ?? '')"
+                                placeholder="Postal code"
+                            />
+                            @error('postal_code')
+                                <x-ui.alert type="error" class="mt-2">{{ $message }}</x-ui.alert>
+                            @enderror
+                        </x-ui.form-group>
+                    </div>
+
+                    <x-ui.form-group label="Country" for="country" required>
+                        <x-ui.input 
+                            type="text" 
+                            name="country" 
+                            id="country" 
+                            :value="old('country', $addr['country'] ?? '')"
+                            placeholder="Country"
+                        />
+                        @error('country')
+                            <x-ui.alert type="error" class="mt-2">{{ $message }}</x-ui.alert>
+                        @enderror
+                    </x-ui.form-group>
+
+                    <x-ui.form-group label="Phone (optional)" for="phone">
+                        <x-ui.input 
+                            type="text" 
+                            name="phone" 
+                            id="phone" 
+                            :value="old('phone', $addr['phone'] ?? $participant->user->phone ?? '')"
+                            placeholder="Phone number for delivery questions"
+                        />
+                        @error('phone')
+                            <x-ui.alert type="error" class="mt-2">{{ $message }}</x-ui.alert>
+                        @enderror
+                    </x-ui.form-group>
+
+                    <x-ui.form-group label="Delivery notes (optional)" for="delivery_notes">
+                        <x-ui.textarea 
+                            name="delivery_notes" 
+                            id="delivery_notes" 
+                            rows="3"
+                            placeholder="Special delivery instructions, gate codes, etc."
+                        >{{ old('delivery_notes', $addr['delivery_notes'] ?? '') }}</x-ui.textarea>
+                        @error('delivery_notes')
+                            <x-ui.alert type="error" class="mt-2">{{ $message }}</x-ui.alert>
+                        @enderror
+                    </x-ui.form-group>
+
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                        <x-ui.button as="a" href="{{ route('gift-exchange.show', $event->id) }}" variant="secondary" min-h-[44px]">
+                            <i class="fa fa-arrow-left mr-2"></i> Back to event
+                        </x-ui.button>
+                        <x-ui.button type="submit" min-h-[44px]">
+                            <i class="fa fa-save mr-2"></i> Save shipping address
+                        </x-ui.button>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">State / Province</label>
-                    <input type="text" name="state_province" value="{{ old('state_province', $addr['state_province'] ?? '') }}" class="mt-1 block w-full border rounded p-2" />
-                    @error('state_province') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Postal code</label>
-                    <input type="text" name="postal_code" value="{{ old('postal_code', $addr['postal_code'] ?? '') }}" class="mt-1 block w-full border rounded p-2" />
-                    @error('postal_code') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Country</label>
-                <input type="text" name="country" value="{{ old('country', $addr['country'] ?? '') }}" class="mt-1 block w-full border rounded p-2" />
-                @error('country') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Phone (optional)</label>
-                <input type="text" name="phone" value="{{ old('phone', $addr['phone'] ?? $participant->user->phone ?? '') }}" class="mt-1 block w-full border rounded p-2" />
-                @error('phone') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Delivery notes (optional)</label>
-                <textarea name="delivery_notes" rows="3" class="mt-1 block w-full border rounded p-2">{{ old('delivery_notes', $addr['delivery_notes'] ?? '') }}</textarea>
-                @error('delivery_notes') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
-            </div>
-
-            <div class="flex items-center justify-between pt-4">
-                <a href="{{ route('gift-exchange.show', $event->id) }}" class="text-sm text-gray-600 hover:underline">Back to event</a>
-                <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">Save shipping address</button>
-            </div>
-        </div>
-    </form>
+            </form>
+        </x-ui.card>
+    </div>
 </div>
 @endsection

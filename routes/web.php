@@ -1,10 +1,10 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WishlistController;
-use App\Http\Controllers\PageController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,42 +18,41 @@ use App\Http\Controllers\PageController;
 */
 
 // User Routes
-Route::get('/', [UserController::class, "showCorrectHomepage"])->name('home');
-Route::get('/test-homepage', function() {
-    return view('homepage-redesigned');
-})->name('test-homepage');
-Route::get('/login', [UserController::class, "showLoginForm"])->middleware('guest')->name('login');
-Route::get('/register', [UserController::class, "showRegisterForm"])->middleware('guest')->name('register');
-Route::post('/register', [UserController::class, "register"])->middleware('guest');
-Route::post('/login', [UserController::class, "login"]);
-Route::post('/logout', [UserController::class, "logout"])->middleware('mustBeLoggedIn')->name('logout');
+Route::get('/', [UserController::class, 'showCorrectHomepage'])->name('home');
+Route::get('/login', [UserController::class, 'showLoginForm'])->middleware('guest')->name('login');
+Route::get('/register', [UserController::class, 'showRegisterForm'])->middleware('guest')->name('register');
+Route::post('/register', [UserController::class, 'register'])->middleware('guest');
+Route::post('/login', [UserController::class, 'login']);
+Route::post('/logout', [UserController::class, 'logout'])->middleware('mustBeLoggedIn')->name('logout');
 
 // Email Verification Routes
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
+
 Route::get('/email/verify', function () {
     return view('auth.verify-email');
 })->middleware('auth')->name('verification.notice');
 
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
     $request->fulfill();
-    
+
     // Check if there's an intended URL stored in session
     $intendedUrl = session()->pull('url.intended');
-    
+
     if ($intendedUrl) {
         return redirect($intendedUrl)->with('success', 'Vaš e-poštni naslov je bil uspešno potrjen.');
     }
-    
+
     // Default: redirect to profile wishlist page after verification
     return redirect()->route('profile.wishlist')->with('success', 'Vaš e-poštni naslov je bil uspešno potrjen. Dobrodošli v GiftHub!');
 })->middleware(['auth', 'signed'])->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
     $request->user()->sendEmailVerificationNotification();
+
     return back()->with('message', 'Povezava za potrditev je bila poslana!');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
-Route::get('/manage-profile', [UserController::class, "showProfileForm"])->middleware(['mustBeLoggedIn', 'verified'])->name('profile.manage');
-Route::put('/manage-profile', [UserController::class, "updateProfile"])->middleware(['mustBeLoggedIn', 'verified'])->name('profile.manage');
+Route::get('/manage-profile', [UserController::class, 'showProfileForm'])->middleware(['mustBeLoggedIn', 'verified'])->name('profile.manage');
+Route::put('/manage-profile', [UserController::class, 'updateProfile'])->middleware(['mustBeLoggedIn', 'verified'])->name('profile.manage');
 
 // Static Pages (public access)
 Route::get('/about', [PageController::class, 'about'])->name('pages.about');
@@ -65,8 +64,8 @@ Route::get('/terms', [PageController::class, 'terms'])->name('pages.terms');
 Route::get('/cookies', [PageController::class, 'cookies'])->name('pages.cookies');
 
 // Wishlist Routes
-Route::get('/add-wish', [WishlistController::class, "showCreateForm"])->middleware(['mustBeLoggedIn', 'requireVerified']);
-Route::post('/add-wish', [WishlistController::class, "storeNewWish"])->middleware(['mustBeLoggedIn', 'requireVerified']);
+Route::get('/add-wish', [WishlistController::class, 'showCreateForm'])->middleware(['mustBeLoggedIn', 'requireVerified']);
+Route::post('/add-wish', [WishlistController::class, 'storeNewWish'])->middleware(['mustBeLoggedIn', 'requireVerified']);
 Route::get('/wishlist', [WishlistController::class, 'index'])->middleware(['mustBeLoggedIn', 'requireVerified'])->name('wishlist.index');
 
 // Edit Wish Route
@@ -100,7 +99,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::put('/wishlists/{userWishlist}', [WishlistController::class, 'updateUserWishlist'])->middleware('requireVerified')->name('wishlists.update');
     Route::delete('/wishlists/{userWishlist}', [WishlistController::class, 'destroyUserWishlist'])->middleware('requireVerified')->name('wishlists.destroy');
     Route::post('/wishlists/{userWishlist}/items', [WishlistController::class, 'storeNewWishToSpecificWishlist'])->middleware('requireVerified')->name('wishlists.items.store');
- 
+
     // Redirect the legacy gift-exchange dashboard to the consolidated profile events page
     Route::permanentRedirect('/gift-exchange', '/profile/events')->name('gift-exchange.dashboard');
     Route::get('/gift-exchange/create', [GiftExchangeController::class, 'showCreateForm'])->middleware('requireVerified')->name('gift-exchange.create.form');
@@ -128,10 +127,10 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/gift-exchange/{event}/edit', [GiftExchangeController::class, 'edit'])->middleware('requireVerified')->name('gift-exchange.edit');
     Route::put('/gift-exchange/{event}', [GiftExchangeController::class, 'update'])->middleware('requireVerified')->name('gift-exchange.update');
     Route::delete('/gift-exchange/{event}', [GiftExchangeController::class, 'destroy'])->middleware('requireVerified')->name('gift-exchange.destroy');
- // Manual assign gifts route (event owner) - quick trigger for assignments
- Route::post('/gift-exchange/{event}/assign-gifts', [GiftExchangeController::class, 'assignGifts'])
-     ->middleware('requireVerified')
-     ->name('gift-exchange.assign-gifts');
+    // Manual assign gifts route (event owner) - quick trigger for assignments
+    Route::post('/gift-exchange/{event}/assign-gifts', [GiftExchangeController::class, 'assignGifts'])
+        ->middleware('requireVerified')
+        ->name('gift-exchange.assign-gifts');
 });
- // Public profile viewing route (other users)
- Route::get('/profile/{user:username}', [UserController::class, "profile"])->middleware(['mustBeLoggedIn'])->name('profile.show');
+// Public profile viewing route (other users)
+Route::get('/profile/{user:username}', [UserController::class, 'profile'])->middleware(['mustBeLoggedIn'])->name('profile.show');

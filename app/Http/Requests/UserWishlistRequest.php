@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\WishlistVisibility;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use App\Enums\WishlistVisibility;
 
 class UserWishlistRequest extends FormRequest
 {

@@ -13,8 +13,6 @@ class RequireEmailVerification
      * If the authenticated user's email is not verified, store the intended URL
      * and redirect them to the verification notice page with a friendly message.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
      * @return mixed
      */
     public function handle(Request $request, Closure $next)

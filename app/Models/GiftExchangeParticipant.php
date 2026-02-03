@@ -28,21 +28,21 @@ class GiftExchangeParticipant extends Model
     {
         return $this->belongsTo(GiftExchangeEvent::class, 'event_id');
     }
-    
+
     // Helper methods
     public function hasShippingAddress(): bool
     {
-        return !empty($this->shipping_address) &&
-               !empty($this->shipping_address['full_name']) &&
-               !empty($this->shipping_address['address_line_1']) &&
-               !empty($this->shipping_address['city']) &&
-               !empty($this->shipping_address['postal_code']) &&
-               !empty($this->shipping_address['country']);
+        return ! empty($this->shipping_address) &&
+               ! empty($this->shipping_address['full_name']) &&
+               ! empty($this->shipping_address['address_line_1']) &&
+               ! empty($this->shipping_address['city']) &&
+               ! empty($this->shipping_address['postal_code']) &&
+               ! empty($this->shipping_address['country']);
     }
-    
+
     public function needsShippingAddress(): bool
     {
-        return $this->event->requiresShippingAddress() && !$this->hasShippingAddress();
+        return $this->event->requiresShippingAddress() && ! $this->hasShippingAddress();
     }
 
     public function user()

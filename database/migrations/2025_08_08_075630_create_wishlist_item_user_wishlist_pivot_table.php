@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('wishlist_item_id')->constrained('wishlist_items')->onDelete('cascade');
             $table->foreignId('user_wishlist_id')->constrained('user_wishlists')->onDelete('cascade');
             $table->timestamps();
-            
+
             // Ensure unique combinations (prevent duplicate entries)
             $table->unique(['wishlist_item_id', 'user_wishlist_id'], 'unique_item_wishlist');
         });

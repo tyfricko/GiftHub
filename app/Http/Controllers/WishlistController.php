@@ -2,34 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Wishlist;
-use App\Models\UserWishlist;
-use Illuminate\Http\Request;
-use AshAllenDesign\ShortURL\Classes\Builder;
-use App\Services\ShortUrlService;
-use App\Jobs\DownloadWishlistImageJob;
-use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\UserWishlistRequest;
 use App\Http\Requests\WishlistItemRequest;
-use App\Enums\WishlistVisibility;
-use Illuminate\Validation\Rule;
+use App\Http\Requests\WishlistUpdateRequest;
+use App\Models\UserWishlist;
+use App\Models\Wishlist;
+use App\Services\WishlistManagementService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class WishlistController extends Controller
 {
-
-    public function showCreateForm() {
+    public function showCreateForm(): \Illuminate\View\View
+    {
         return view('add-wish');
     }
 
     /**
      * Display the current user's wishlist items.
      */
-    public function index()
+    public function index(): \Illuminate\Http\RedirectResponse
     {
         return redirect()->route('profile.wishlist');
     }
 
-    public function storeNewWish(WishlistItemRequest $request) {
+    public function storeNewWish(WishlistItemRequest $request): \Illuminate\Http\RedirectResponse
+    {
         $incomingFields = $request->validated();
 
         // Sanitize required fields
@@ -47,100 +45,41 @@ class WishlistController extends Controller
             $incomingFields['description'] = strip_tags($incomingFields['description']);
         }
 
-        // Scrape metadata
-        $scraper = new \App\Services\MetadataScraperService();
-        $metadata = $scraper->scrape($incomingFields['url']);
-
-        // Handle file upload for product image (takes precedence over image_url)
-        if ($request->hasFile('image_file') && $request->file('image_file')->isValid()) {
-            $path = $request->file('image_file')->store('wishlist_images', 'public');
-            $incomingFields['image_url'] = $path;
-        } elseif ($request->hasFile('image') && $request->file('image')->isValid()) {
-            $path = $request->file('image')->store('wishlist_images', 'public');
-            $incomingFields['image_url'] = $path;
-        } elseif (!empty($metadata['image_url'])) {
-            // Only use scraped image_url if no file was uploaded
-            $incomingFields['image_url'] = $metadata['image_url'];
-        } else {
-            // If no image is scraped or uploaded, ensure image_url is null
-            $incomingFields['image_url'] = null;
-        }
-
-        // Shorten URL if applicable (existing logic)
-        $shortUrlService = new ShortUrlService();
-        // Ensure URL has a scheme before shortening
-        if (!preg_match("~^(?:f|ht)tps?://~i", $incomingFields['url'])) {
-            $incomingFields['url'] = "https://" . $incomingFields['url'];
-        }
-        $incomingFields['url'] = $shortUrlService->generate($incomingFields['url']);
-
         // Handle multiple wishlist assignment
         $selectedWishlistIds = [];
-        
-        if (!empty($incomingFields['user_wishlist_ids'])) {
+
+        if (! empty($incomingFields['user_wishlist_ids'])) {
             // Use the selected wishlists from the form
             $selectedWishlistIds = $incomingFields['user_wishlist_ids'];
-            \Log::info('Add Wish Debug - Using selected wishlists: ' . json_encode($selectedWishlistIds));
-        } elseif (!empty($incomingFields['wishlist_id'])) {
+            \Log::info('Add Wish Debug - Using selected wishlists: '.json_encode($selectedWishlistIds));
+        } elseif (! empty($incomingFields['wishlist_id'])) {
             // Backward compatibility: single wishlist from URL parameter
             $selectedWishlistIds = [$incomingFields['wishlist_id']];
-            \Log::info('Add Wish Debug - Using URL wishlist_id: ' . $incomingFields['wishlist_id']);
+            \Log::info('Add Wish Debug - Using URL wishlist_id: '.$incomingFields['wishlist_id']);
         } else {
             // Default to user's default wishlist
             $defaultWishlist = auth()->user()->getOrCreateDefaultWishlist();
             $selectedWishlistIds = [$defaultWishlist->id];
-            \Log::info('Add Wish Debug - Using default wishlist: ' . $defaultWishlist->id);
+            \Log::info('Add Wish Debug - Using default wishlist: '.$defaultWishlist->id);
         }
-
-        // Validate that all selected wishlists belong to the current user
-        $userWishlists = auth()->user()->userWishlists()->whereIn('id', $selectedWishlistIds)->get();
-        if ($userWishlists->count() !== count($selectedWishlistIds)) {
-            \Log::warning('Add Wish Debug - Some selected wishlists do not belong to user');
-            return redirect()->back()->withErrors(['user_wishlist_ids' => 'Some selected wishlists are invalid.'])->withInput();
-        }
-
-        \Log::info('Add Wish Debug - Validated wishlists: ' . $userWishlists->pluck('name', 'id')->toJson());
 
         // Remove wishlist-specific fields from the main item data
         unset($incomingFields['wishlist_id'], $incomingFields['user_wishlist_ids']);
 
-        // Determine sort_order (use the highest from all selected wishlists)
-        $maxSortOrder = 0;
-        foreach ($userWishlists as $wishlist) {
-            $wishlistMaxSort = $wishlist->items()->max('sort_order') ?? 0;
-            $maxSortOrder = max($maxSortOrder, $wishlistMaxSort);
-        }
-        $incomingFields['sort_order'] = $maxSortOrder + 1;
+        // Use the service to create the item
+        $service = new WishlistManagementService();
+        $service->createItem($incomingFields, $selectedWishlistIds, $request);
 
-        // Create the wishlist item
-        $wishlist = Wishlist::create($incomingFields);
-        
-        // Attach the item to all selected wishlists using the pivot table
-        $wishlist->userWishlists()->attach($selectedWishlistIds);
-        
-        \Log::info('Add Wish Debug - Created item ID: ' . $wishlist->id . ' and attached to wishlists: ' . json_encode($selectedWishlistIds));
-
-        // If an image_url was scraped and no file was uploaded, dispatch the job to download it
-        // We check if it's a URL (not a local path) and if it was set from metadata (not user upload)
-        if (isset($incomingFields['image_url']) && filter_var($incomingFields['image_url'], FILTER_VALIDATE_URL)) {
-            // Ensure this only happens if no file was uploaded by the user
-            // The logic above already prioritizes user upload, so if image_url is still an external URL,
-            // it means it came from scraping and no user file was present.
-            DownloadWishlistImageJob::dispatch($wishlist->id, $incomingFields['image_url']);
-        }
-
-        return redirect("/")->with('success', 'Dodal si izdelek v tovj seznam želja!');
+        return redirect('/')->with('success', 'Dodal si izdelek v tovj seznam želja!');
     }
+
     /**
      * Scrape metadata from a given URL and return as JSON.
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function scrapeUrl(Request $request)
+    public function scrapeUrl(Request $request): \Illuminate\Http\JsonResponse
     {
         $validated = $request->validate([
-            'url' => 'required|url'
+            'url' => 'required|url',
         ]);
 
         $scraper = new \App\Services\MetadataScraperService();
@@ -152,44 +91,21 @@ class WishlistController extends Controller
     /**
      * Update a wishlist item (partial update).
      */
-    public function update(Request $request, $id)
+    public function update(WishlistUpdateRequest $request, $id): \Illuminate\Http\JsonResponse
     {
-        $wishlist = \App\Models\Wishlist::find($id);
-        if (!$wishlist) {
+        $wishlist = Wishlist::find($id);
+
+        if (! $wishlist) {
             return response()->json([
-                'message' => 'Wishlist item not found.'
+                'message' => 'Wishlist item not found.',
             ], 404);
         }
 
-        if ($wishlist->user_id !== auth()->id()) {
-            return response()->json([
-                'message' => 'You are not authorized to update this wishlist item.'
-            ], 403);
-        }
-
-        $fields = $request->only(['title', 'description', 'price', 'currency', 'image_url', 'user_wishlist_id', 'sort_order']);
-
-        if (empty($fields)) {
-            return response()->json([
-                'message' => 'No fields provided for update.'
-            ], 400);
-        }
-
-        $validated = $request->validate([
-            'title' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'nullable|numeric|min:0',
-            'currency' => 'nullable|string|max:10',
-            'image_url' => 'nullable|url',
-            'user_wishlist_id' => 'nullable|exists:user_wishlists,id',
-            'sort_order' => 'nullable|integer|min:0',
-            'user_wishlist_id' => 'nullable|exists:user_wishlists,id',
-            'sort_order' => 'nullable|integer|min:0',
-        ]);
+        $validated = $request->validated();
 
         if (empty($validated)) {
             return response()->json([
-                'message' => 'No fields provided for update.'
+                'message' => 'No fields provided for update.',
             ], 400);
         }
 
@@ -223,14 +139,14 @@ class WishlistController extends Controller
 
         return response()->json([
             'message' => 'Wishlist item updated successfully.',
-            'data' => $wishlist->fresh()
+            'data' => $wishlist->fresh(),
         ]);
     }
 
     /**
      * Update a wishlist item.
      */
-    public function updateWish(Request $request, Wishlist $wish)
+    public function updateWish(Request $request, Wishlist $wish): \Illuminate\Http\RedirectResponse
     {
         if ($wish->user_id != auth()->id()) {
             return redirect('/');
@@ -238,15 +154,15 @@ class WishlistController extends Controller
 
         $incomingFields = $request->validate([
             'itemname' => 'required|string',
-            'url'  => 'required|url',
+            'url' => 'required|url',
             'price' => 'nullable|numeric',
             'description' => 'nullable|string',
             'image_url' => 'nullable|url',
             'user_wishlist_ids' => 'nullable|array',
-            'user_wishlist_ids.*' => 'exists:user_wishlists,id', // Validate each ID in the array
+            'user_wishlist_ids.*' => 'exists:user_wishlists,id',
             'sort_order' => 'nullable|integer|min:0',
-            'image_file' => 'nullable|file|image|max:5120', // max 5MB
-            'image' => 'nullable|file|image|max:5120', // also allow "image" field
+            'image_file' => 'nullable|file|image|max:5120',
+            'image' => 'nullable|file|image|max:5120',
         ]);
 
         // Sanitize required fields
@@ -257,149 +173,106 @@ class WishlistController extends Controller
         if (isset($incomingFields['price'])) {
             $incomingFields['price'] = (float) $incomingFields['price'];
         }
-        // Always set currency to EUR
         $incomingFields['currency'] = 'EUR';
         if (isset($incomingFields['description'])) {
             $incomingFields['description'] = strip_tags($incomingFields['description']);
         }
-        // If image_url is present in incomingFields, it means it came from the hidden input
-        // and we should use it unless a new file is uploaded.
         if (isset($incomingFields['image_url'])) {
             $incomingFields['image_url'] = strip_tags($incomingFields['image_url']);
         }
 
-
-        // Handle file upload for product image (takes precedence over image_url)
-        if ($request->hasFile('image_file') && $request->file('image_file')->isValid()) {
-            $path = $request->file('image_file')->store('wishlist_images', 'public');
-            $incomingFields['image_url'] = $path;
-        } elseif ($request->hasFile('image') && $request->file('image')->isValid()) {
-            // Also support "image" field for upload
-            $path = $request->file('image')->store('wishlist_images', 'public');
-            $incomingFields['image_url'] = $path;
-        }
-
-        // Shorten URL only if it has changed
-        $shortUrlService = new ShortUrlService();
-
-        // Normalize and sanitize incoming URL
-        $incomingUrl = $incomingFields['url'];
-        if (!preg_match("~^(?:f|ht)tps?://~i", $incomingUrl)) {
-            $incomingUrl = "https://" . $incomingUrl;
-        }
-        $incomingUrl = strip_tags($incomingUrl);
-
-        // Normalize and sanitize original URL for comparison
-        $originalUrl = $wish->url;
-        if (!preg_match("~^(?:f|ht)tps?://~i", $originalUrl)) {
-            $originalUrl = "https://" . $originalUrl;
-        }
-        $originalUrl = strip_tags($originalUrl);
-
-        if ($incomingUrl !== $originalUrl) {
-            // Only generate a new short URL if the URL has changed
-            $incomingFields['url'] = $shortUrlService->generate($incomingUrl);
-        } else {
-            // Keep the original short URL
-            $incomingFields['url'] = $wish->url;
-        }
-
-        // Handle multiple wishlist assignment for updates
-        $selectedWishlistIds = [];
-        
-        if (!empty($incomingFields['user_wishlist_ids'])) {
-            $selectedWishlistIds = $incomingFields['user_wishlist_ids'];
-            
-            // Validate that all selected wishlists belong to the current user
-            $userWishlists = auth()->user()->userWishlists()->whereIn('id', $selectedWishlistIds)->get();
-            if ($userWishlists->count() !== count($selectedWishlistIds)) {
-                return redirect()->back()->withErrors(['user_wishlist_ids' => 'Some selected wishlists are invalid.'])->withInput();
-            }
-            
-            // Update the pivot table relationships
-            $wish->userWishlists()->sync($selectedWishlistIds);
-            \Log::info('Update Wish Debug - Updated item ID: ' . $wish->id . ' wishlists to: ' . json_encode($selectedWishlistIds));
-        }
+        // Get wishlist IDs (handle both array and single ID)
+        $wishlistIds = ! empty($incomingFields['user_wishlist_ids'])
+            ? $incomingFields['user_wishlist_ids']
+            : null;
 
         // Remove wishlist-specific fields from the main item data
-        // The user_wishlist_ids are handled by the sync method, so remove them from the main update
         unset($incomingFields['user_wishlist_ids']);
-        
+
         if (isset($incomingFields['sort_order'])) {
             $incomingFields['sort_order'] = (int) $incomingFields['sort_order'];
         }
 
-        $wish->update($incomingFields);
+        // Use the service to update the item
+        $service = new WishlistManagementService();
+        $service->updateItem($wish, $incomingFields, $wishlistIds, $request);
 
-        return redirect('/profile/' . auth()->user()->username)->with('success', 'Wishlist item updated successfully.');
+        return redirect('/profile/'.auth()->user()->username)->with('success', 'Wishlist item updated successfully.');
     }
 
     /**
      * Delete a wishlist item.
      */
-    public function destroy($id)
+    public function destroy($id): \Illuminate\Http\JsonResponse
     {
-        \Log::info("Attempting to delete wishlist item with ID: {$id} by user: " . auth()->id());
-        
+        \Log::info("Attempting to delete wishlist item with ID: {$id} by user: ".auth()->id());
+
         try {
-            $wishlist = \App\Models\Wishlist::find($id);
-            if (!$wishlist) {
+            $wishlist = Wishlist::find($id);
+            if (! $wishlist) {
                 \Log::warning("Wishlist item with ID: {$id} not found.");
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Wishlist item not found.'
+                    'message' => 'Wishlist item not found.',
                 ], 404);
             }
 
             if ($wishlist->user_id !== auth()->id()) {
-                \Log::warning("Unauthorized attempt to delete wishlist item with ID: {$id} by user: " . auth()->id());
+                \Log::warning("Unauthorized attempt to delete wishlist item with ID: {$id} by user: ".auth()->id());
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'You are not authorized to delete this wishlist item.'
+                    'message' => 'You are not authorized to delete this wishlist item.',
                 ], 403);
             }
 
             $itemName = $wishlist->itemname;
-            $wishlist->delete();
+            $service = new WishlistManagementService();
+            $service->deleteItem($wishlist);
             \Log::info("Wishlist item '{$itemName}' with ID: {$id} deleted successfully.");
-            
+
             return response()->json([
                 'success' => true,
-                'message' => "Item '{$itemName}' deleted successfully!"
+                'message' => "Item '{$itemName}' deleted successfully!",
             ]);
-            
+
         } catch (\Exception $e) {
-            \Log::error("Error deleting wishlist item with ID: {$id}. Error: " . $e->getMessage());
+            \Log::error("Error deleting wishlist item with ID: {$id}. Error: ".$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while deleting the item: ' . $e->getMessage()
+                'message' => 'An error occurred while deleting the item: '.$e->getMessage(),
             ], 500);
         }
     }
+
     /**
      * Show the form for editing the specified wish.
      */
-    public function edit(Wishlist $wish)
+    public function edit(Wishlist $wish): \Illuminate\Http\RedirectResponse|\Illuminate\View\View
     {
         if ($wish->user_id !== auth()->id()) {
             abort(403, 'You are not authorized to edit this wish.');
         }
+
         return view('add-wish', ['wish' => $wish]);
     }
 
     /**
      * Store a newly created user wishlist in storage.
      */
-    public function storeUserWishlist(UserWishlistRequest $request)
+    public function storeUserWishlist(UserWishlistRequest $request): \Illuminate\Http\RedirectResponse
     {
         $validated = $request->validated();
 
-        auth()->user()->userWishlists()->create([
-            'name' => $validated['name'],
-            'description' => $validated['description'],
-            'visibility' => WishlistVisibility::from($validated['visibility']),
-            'is_default' => false, // New wishlists are not default by creation
-        ]);
+        $service = new WishlistManagementService();
+        $service->createUserWishlist(
+            auth()->user(),
+            $validated['name'],
+            $validated['description'],
+            $validated['visibility']
+        );
 
         return redirect()->back()->with('success', 'Wishlist created successfully!');
     }
@@ -407,18 +280,20 @@ class WishlistController extends Controller
     /**
      * Update the specified user wishlist in storage.
      */
-    public function updateUserWishlist(UserWishlistRequest $request, UserWishlist $userWishlist)
+    public function updateUserWishlist(UserWishlistRequest $request, UserWishlist $userWishlist): \Illuminate\Http\RedirectResponse
     {
         // Policy will handle authorization
         $this->authorize('update', $userWishlist);
 
         $validated = $request->validated();
 
-        $userWishlist->update([
-            'name' => $validated['name'],
-            'description' => $validated['description'],
-            'visibility' => WishlistVisibility::from($validated['visibility']),
-        ]);
+        $service = new WishlistManagementService();
+        $service->updateUserWishlist(
+            $userWishlist,
+            $validated['name'],
+            $validated['description'],
+            $validated['visibility']
+        );
 
         return redirect()->back()->with('success', 'Wishlist updated successfully!');
     }
@@ -426,57 +301,44 @@ class WishlistController extends Controller
     /**
      * Remove the specified user wishlist from storage.
      */
-    public function destroyUserWishlist(UserWishlist $userWishlist)
+    public function destroyUserWishlist(UserWishlist $userWishlist): \Illuminate\Http\JsonResponse
     {
-        \Log::info("Attempting to delete user wishlist with ID: {$userWishlist->id} by user: " . auth()->id());
-        
+        \Log::info("Attempting to delete user wishlist with ID: {$userWishlist->id} by user: ".auth()->id());
+
         try {
             // Policy will handle authorization
             $this->authorize('delete', $userWishlist);
             \Log::info("Authorization passed for wishlist deletion: {$userWishlist->id}");
 
-            // Prevent deletion if it's the user's only wishlist
-            $userWishlistCount = auth()->user()->userWishlists()->count();
-            \Log::info("User has {$userWishlistCount} wishlists total");
-            
-            if ($userWishlistCount === 1) {
-                \Log::warning("Attempted to delete last wishlist for user: " . auth()->id());
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Cannot delete the last wishlist. Please create another wishlist first.'
-                ], 400);
-            }
-
-            // If the deleted wishlist was the default, set another one as default
-            if ($userWishlist->is_default) {
-                \Log::info("Deleted wishlist was default, setting new default");
-                $newDefault = auth()->user()->userWishlists()->where('id', '!=', $userWishlist->id)->first();
-                if ($newDefault) {
-                    $newDefault->update(['is_default' => true]);
-                    \Log::info("Set new default wishlist: {$newDefault->id}");
-                }
-            }
+            $service = new WishlistManagementService();
+            $service->deleteUserWishlist($userWishlist, auth()->user());
 
             $wishlistName = $userWishlist->name;
-            $userWishlist->delete(); // This will also delete associated wishlist items due to cascade on delete in migration
             \Log::info("User wishlist '{$wishlistName}' deleted successfully");
 
             return response()->json([
                 'success' => true,
-                'message' => "Wishlist '{$wishlistName}' deleted successfully!"
+                'message' => "Wishlist '{$wishlistName}' deleted successfully!",
             ]);
-            
+
         } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
-            \Log::warning("Authorization failed for wishlist deletion: {$userWishlist->id} by user: " . auth()->id());
+            \Log::warning("Authorization failed for wishlist deletion: {$userWishlist->id} by user: ".auth()->id());
+
             return response()->json([
                 'success' => false,
-                'message' => 'You are not authorized to delete this wishlist.'
+                'message' => 'You are not authorized to delete this wishlist.',
             ], 403);
-        } catch (\Exception $e) {
-            \Log::error("Error deleting user wishlist with ID: {$userWishlist->id}. Error: " . $e->getMessage());
+        } catch (\InvalidArgumentException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while deleting the wishlist: ' . $e->getMessage()
+                'message' => $e->getMessage(),
+            ], 400);
+        } catch (\Exception $e) {
+            \Log::error("Error deleting user wishlist with ID: {$userWishlist->id}. Error: ".$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while deleting the wishlist: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -484,7 +346,7 @@ class WishlistController extends Controller
     /**
      * Store a newly created wish item to a specific user wishlist.
      */
-    public function storeNewWishToSpecificWishlist(WishlistItemRequest $request, UserWishlist $userWishlist)
+    public function storeNewWishToSpecificWishlist(WishlistItemRequest $request, UserWishlist $userWishlist): \Illuminate\Http\RedirectResponse
     {
         // Policy will handle authorization
         $this->authorize('addWishlistItem', $userWishlist);
@@ -495,59 +357,22 @@ class WishlistController extends Controller
         $incomingFields['itemname'] = strip_tags($incomingFields['itemname']);
         $incomingFields['url'] = strip_tags($incomingFields['url']);
         $incomingFields['user_id'] = auth()->id();
-        $incomingFields['user_wishlist_id'] = $userWishlist->id; // Assign to the specific wishlist
 
         // Sanitize and cast optional fields
         if (isset($incomingFields['price'])) {
             $incomingFields['price'] = (float) $incomingFields['price'];
         }
-        // Always set currency to EUR
         $incomingFields['currency'] = 'EUR';
         if (isset($incomingFields['description'])) {
             $incomingFields['description'] = strip_tags($incomingFields['description']);
         }
 
-        // Scrape metadata
-        $scraper = new \App\Services\MetadataScraperService();
-        $metadata = $scraper->scrape($incomingFields['url']);
+        // Remove wishlist-specific fields from the main item data
+        unset($incomingFields['wishlist_id'], $incomingFields['user_wishlist_ids']);
 
-        // Handle file upload for product image (takes precedence over image_url)
-        if ($request->hasFile('image_file') && $request->file('image_file')->isValid()) {
-            $path = $request->file('image_file')->store('wishlist_images', 'public');
-            $incomingFields['image_url'] = $path;
-        } elseif ($request->hasFile('image') && $request->file('image')->isValid()) {
-            $path = $request->file('image')->store('wishlist_images', 'public');
-            $incomingFields['image_url'] = $path;
-        } elseif (!empty($metadata['image_url'])) {
-            // Only use scraped image_url if no file was uploaded
-            $incomingFields['image_url'] = $metadata['image_url'];
-        } else {
-            // If no image is scraped or uploaded, ensure image_url is null
-            $incomingFields['image_url'] = null;
-        }
-
-        // Shorten URL if applicable (existing logic)
-        $shortUrlService = new ShortUrlService();
-        // Ensure URL has a scheme before shortening
-        if (!preg_match("~^(?:f|ht)tps?://~i", $incomingFields['url'])) {
-            $incomingFields['url'] = "https://" . $incomingFields['url'];
-        }
-        $incomingFields['url'] = $shortUrlService->generate($incomingFields['url']);
-
-        // Determine sort_order
-        $maxSortOrder = $userWishlist->items()->max('sort_order');
-        $incomingFields['sort_order'] = ($maxSortOrder ?? 0) + 1;
-
-        $wishlist = Wishlist::create($incomingFields);
-
-        // If an image_url was scraped and no file was uploaded, dispatch the job to download it
-        // We check if it's a URL (not a local path) and if it was set from metadata (not user upload)
-        if (isset($incomingFields['image_url']) && filter_var($incomingFields['image_url'], FILTER_VALIDATE_URL)) {
-            // Ensure this only happens if no file was uploaded by the user
-            // The logic above already prioritizes user upload, so if image_url is still an external URL,
-            // it means it came from scraping and no user file was present.
-            DownloadWishlistImageJob::dispatch($wishlist->id, $incomingFields['image_url']);
-        }
+        // Use the service to create the item
+        $service = new WishlistManagementService();
+        $service->createItem($incomingFields, [$userWishlist->id], $request);
 
         return redirect()->back()->with('success', 'Dodal si izdelek v tovj seznam želja!');
     }

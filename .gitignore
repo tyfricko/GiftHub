@@ -5,7 +5,6 @@
 /public/storage
 /storage/*.key
 /vendor
-/tests
 .env
 .env.backup
 .env.production
@@ -19,9 +18,6 @@ yarn-error.log
 /.idea
 /.vscode
 /.kilocode/
-# IDE/Editor specific files
+/.cursor/
 .kilocodemodes
-Code_Audit_Report.md
 phpunit.xml
-shipping-address-specification.md
-wishlist_feature_design.md

@@ -15,11 +15,11 @@ class MustBeLoggedIn
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if(auth()->check()) {
+        if (auth()->check()) {
             return $next($request);
         }
 
         return redirect('/')->with('failure', 'Potrebno je biti prijavljen.');
-        
+
     }
 }

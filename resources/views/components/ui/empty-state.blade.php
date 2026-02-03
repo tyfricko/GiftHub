@@ -6,8 +6,8 @@
     'actionUrl' => '#',
 ])
 
-<div class="bg-white rounded-lg border border-neutral-200 p-8 text-center shadow-level-1">
-    <div class="mx-auto w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-4">
+<div class="bg-white rounded-lg border border-neutral-200 p-8 text-center shadow-level-1 dark:bg-neutral-800 dark:border-neutral-700">
+    <div class="mx-auto w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-4 dark:bg-neutral-700">
         @if($icon === 'calendar')
             <svg class="w-10 h-10 text-neutral-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -19,10 +19,10 @@
         @endif
     </div>
 
-    <h3 class="text-lg font-medium text-neutral-900 mb-2">{{ $title }}</h3>
+    <h3 class="text-lg font-medium text-neutral-900 mb-2 dark:text-neutral-100">{{ $title }}</h3>
 
     @if($description)
-        <p class="text-sm text-neutral-600 mb-6 max-w-md mx-auto">{{ $description }}</p>
+        <p class="text-sm text-neutral-600 mb-6 max-w-md mx-auto dark:text-neutral-400">{{ $description }}</p>
     @endif
 
     @if($actionText && $actionUrl !== '#')

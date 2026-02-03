@@ -2,15 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 class PageController extends Controller
 {
     public function about()
     {
         return view('pages.about', [
             'title' => 'About GiftHub',
-            'description' => 'Learn about GiftHub and our mission to simplify gift-giving.'
+            'description' => 'Learn about GiftHub and our mission to simplify gift-giving.',
         ]);
     }
 
@@ -18,7 +16,7 @@ class PageController extends Controller
     {
         return view('pages.how-it-works', [
             'title' => 'How GiftHub Works',
-            'description' => 'Discover how to create wishlists and organize gift exchanges.'
+            'description' => 'Discover how to create wishlists and organize gift exchanges.',
         ]);
     }
 
@@ -26,7 +24,7 @@ class PageController extends Controller
     {
         return view('pages.pricing', [
             'title' => 'GiftHub Pricing',
-            'description' => 'Choose the perfect plan for your gift-giving needs.'
+            'description' => 'Choose the perfect plan for your gift-giving needs.',
         ]);
     }
 
@@ -34,7 +32,7 @@ class PageController extends Controller
     {
         return view('pages.contact', [
             'title' => 'Contact Us',
-            'description' => 'Get in touch with the GiftHub team.'
+            'description' => 'Get in touch with the GiftHub team.',
         ]);
     }
 
@@ -42,7 +40,7 @@ class PageController extends Controller
     {
         return view('pages.privacy', [
             'title' => 'Privacy Policy',
-            'description' => 'Learn how we protect your data and privacy.'
+            'description' => 'Learn how we protect your data and privacy.',
         ]);
     }
 
@@ -50,7 +48,7 @@ class PageController extends Controller
     {
         return view('pages.terms', [
             'title' => 'Terms of Service',
-            'description' => 'Read our terms and conditions for using GiftHub.'
+            'description' => 'Read our terms and conditions for using GiftHub.',
         ]);
     }
 
@@ -58,7 +56,7 @@ class PageController extends Controller
     {
         return view('pages.cookies', [
             'title' => 'Cookie Policy',
-            'description' => 'Understand how we use cookies on GiftHub.'
+            'description' => 'Understand how we use cookies on GiftHub.',
         ]);
     }
 }

@@ -14,17 +14,18 @@ class GiftExchangeShippingAddressRequest extends FormRequest
         $user = $this->user();
         $event = $this->route('event');
 
-        if (!$user || !$event) {
+        if (! $user || ! $event) {
             return false;
         }
 
         // Ensure event requires shipping address
-        if (!method_exists($event, 'requiresShippingAddress') || !$event->requiresShippingAddress()) {
+        if (! method_exists($event, 'requiresShippingAddress') || ! $event->requiresShippingAddress()) {
             return false;
         }
 
         // Ensure user is an accepted participant for this event
         $participant = $event->participants()->where('user_id', $user->id)->first();
+
         return $participant && $participant->status === 'accepted';
     }
 
@@ -43,7 +44,7 @@ class GiftExchangeShippingAddressRequest extends FormRequest
         }
 
         // Normalize phone: allow +, numbers, spaces, dashes, parentheses
-        if (!empty($input['phone'])) {
+        if (! empty($input['phone'])) {
             $normalized = preg_replace('/[^0-9+\-\s\(\)]/', '', $input['phone']);
             $input['phone'] = $normalized;
         }
@@ -53,8 +54,6 @@ class GiftExchangeShippingAddressRequest extends FormRequest
 
     /**
      * Validation rules for shipping address.
-     *
-     * @return array
      */
     public function rules(): array
     {

@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Wishlist extends Model
 {
@@ -21,7 +20,7 @@ class Wishlist extends Model
         'currency',
         'description',
         'image_url',
-        'sort_order'
+        'sort_order',
     ];
 
     public function user()
@@ -32,7 +31,7 @@ class Wishlist extends Model
     public function userWishlists()
     {
         return $this->belongsToMany(UserWishlist::class, 'wishlist_item_user_wishlist', 'wishlist_item_id', 'user_wishlist_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     // Keep the old relationship for backward compatibility during migration

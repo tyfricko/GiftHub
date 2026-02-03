@@ -2,19 +2,20 @@
 
 namespace App\Mail;
 
+use App\Models\GiftExchangeEvent;
+use App\Models\GiftExchangeInvitation;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use App\Models\GiftExchangeInvitation;
-use App\Models\GiftExchangeEvent;
 
 class GiftExchangeInvitationMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $invitation;
+
     public $event;
+
     public $invitationLink;
 
     /**
@@ -24,7 +25,7 @@ class GiftExchangeInvitationMail extends Mailable
     {
         $this->invitation = $invitation;
         $this->event = $event;
-        $this->invitationLink = url('/gift-exchange/invitations/' . $invitation->token);
+        $this->invitationLink = url('/gift-exchange/invitations/'.$invitation->token);
     }
 
     /**

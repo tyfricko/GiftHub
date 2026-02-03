@@ -12,23 +12,23 @@
                         <path d="M12 2L2 7v10c0 5.55 3.84 9.95 9 11 5.16-1.05 9-5.45 9-11V7l-10-5z"/>
                         <path d="M9 12l2 2 4-4" stroke="white" stroke-width="2" fill="none"/>
                     </svg>
-                    <span class="text-xl font-bold">Gift Hub</span>
+                    <span class="text-xl font-bold">{{ __('messages.gift_hub') }}</span>
                 </a>
             </div>
 
             <!-- Desktop Navigation -->
             @if ($user)
                 <div class="hidden md:flex items-center space-x-8" role="navigation" aria-label="Primary navigation">
-                    <a href="{{ route('wishlist.index') }}" class="text-neutral-700 hover:text-primary-600 font-medium transition-colors duration-fast">My Wishlist</a>
-                    <a href="{{ route('profile.events') }}" class="text-neutral-700 hover:text-primary-600 font-medium transition-colors duration-fast">My Events</a>
-                    <a href="{{ route('profile.manage') }}" class="text-neutral-700 hover:text-primary-600 font-medium transition-colors duration-fast">Manage Profile</a>
+                    <a href="{{ route('wishlist.index') }}" class="text-neutral-700 hover:text-primary-600 font-medium transition-colors duration-fast">{{ __('messages.nav_my_wishlist') }}</a>
+                    <a href="{{ route('profile.events') }}" class="text-neutral-700 hover:text-primary-600 font-medium transition-colors duration-fast">{{ __('messages.nav_my_events') }}</a>
+                    <a href="{{ route('profile.manage') }}" class="text-neutral-700 hover:text-primary-600 font-medium transition-colors duration-fast">{{ __('messages.nav_manage_profile') }}</a>
                 </div>
             @endif
 
             <!-- Desktop Auth Buttons -->
             <div class="hidden md:flex items-center space-x-4">
                 @if ($user)
-                    <x-ui.button variant="primary" size="sm" as="a" href="/add-wish">Add Wish</x-ui.button>
+                    <x-ui.button variant="primary" size="sm" as="a" href="/add-wish">{{ __('messages.nav_add_wish') }}</x-ui.button>
 
                     <div class="flex items-center space-x-3">
                         <a href="/profile/{{ $user->username }}" class="flex items-center space-x-2 text-neutral-700 hover:text-primary-600 transition-colors duration-fast" aria-label="Open profile">
@@ -40,12 +40,12 @@
 
                         <form action="/logout" method="POST" class="inline" style="margin: 0px 12px">
                             @csrf
-                            <x-ui.button variant="secondary" size="sm" type="submit">Logout</x-ui.button>
+                            <x-ui.button variant="secondary" size="sm" type="submit">{{ __('messages.nav_logout') }}</x-ui.button>
                         </form>
                     </div>
                 @else
-                    <a href="/login" class="text-neutral-700 hover:text-primary-600 font-semibold transition-colors duration-fast">Sign In</a>
-                    <x-ui.button variant="primary" size="sm" as="a" href="/register">Register</x-ui.button>
+                    <a href="/login" class="text-neutral-700 hover:text-primary-600 font-semibold transition-colors duration-fast">{{ __('messages.nav_sign_in') }}</a>
+                    <x-ui.button variant="primary" size="sm" as="a" href="/register">{{ __('messages.nav_register') }}</x-ui.button>
                 @endif
             </div>
 
@@ -67,17 +67,17 @@
         <div class="md:hidden" x-show="mobileMenuOpen" @click.away="mobileMenuOpen = false" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-2" aria-hidden="false">
             <div class="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-neutral-200" role="menu" aria-label="Mobile primary">
                 @if ($user)
-                    <a href="{{ route('wishlist.index') }}" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">My Wishlist</a>
-                    <a href="{{ route('profile.events') }}" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">My Events</a>
-                    <a href="{{ route('profile.manage') }}" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">Manage Profile</a>
-                    <a href="/add-wish" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">Add Wish</a>
+                    <a href="{{ route('wishlist.index') }}" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">{{ __('messages.nav_my_wishlist') }}</a>
+                    <a href="{{ route('profile.events') }}" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">{{ __('messages.nav_my_events') }}</a>
+                    <a href="{{ route('profile.manage') }}" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">{{ __('messages.nav_manage_profile') }}</a>
+                    <a href="/add-wish" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">{{ __('messages.nav_add_wish') }}</a>
                     <form action="/logout" method="POST" class="block px-3 py-2" role="none">
                         @csrf
-                        <button type="submit" class="w-full text-left text-neutral-700 hover:text-primary-600 font-medium transition-colors duration-fast" role="menuitem">Logout</button>
+                        <button type="submit" class="w-full text-left text-neutral-700 hover:text-primary-600 font-medium transition-colors duration-fast" role="menuitem">{{ __('messages.nav_logout') }}</button>
                     </form>
                 @else
-                    <a href="/login" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">Sign In</a>
-                    <a href="/register" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">Register</a>
+                    <a href="/login" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">{{ __('messages.nav_sign_in') }}</a>
+                    <a href="/register" class="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-md font-medium transition-colors duration-fast" role="menuitem">{{ __('messages.nav_register') }}</a>
                 @endif
             </div>
         </div>

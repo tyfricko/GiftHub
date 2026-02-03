@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
@@ -14,7 +12,7 @@ return new class extends Migration
     {
         // Migrate existing wishlist items to the new pivot table structure
         // This ensures backward compatibility with existing data
-        
+
         DB::statement('
             INSERT INTO wishlist_item_user_wishlist (wishlist_item_id, user_wishlist_id, created_at, updated_at)
             SELECT
@@ -30,7 +28,7 @@ return new class extends Migration
                 AND pivot.user_wishlist_id = wi.wishlist_id
             )
         ');
-        
+
         \Log::info('Migrated existing wishlist items to pivot table structure');
     }
 
@@ -45,7 +43,7 @@ return new class extends Migration
             INNER JOIN wishlist_items wi ON pivot.wishlist_item_id = wi.id
             WHERE pivot.user_wishlist_id = wi.wishlist_id
         ');
-        
+
         \Log::info('Removed migrated pivot table entries');
     }
 };

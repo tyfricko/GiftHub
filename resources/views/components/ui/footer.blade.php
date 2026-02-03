@@ -7,29 +7,29 @@
                         <path d="M12 2L2 7v10c0 5.55 3.84 9.95 9 11 5.16-1.05 9-5.45 9-11V7l-10-5z"/>
                         <path d="M9 12l2 2 4-4" stroke="white" stroke-width="2" fill="none"/>
                     </svg>
-                    <span class="text-xl font-bold">Gift Hub</span>
+                    <span class="text-xl font-bold">{{ __('messages.gift_hub') }}</span>
                 </div>
                 <p class="text-neutral-600 text-body-sm max-w-md leading-relaxed">
-                    Simplify your gift-giving with organized Secret Santa exchanges, shareable wishlists, and stress-free celebrations.
+                    {{ __('messages.footer_description') }}
                 </p>
             </div>
 
             <div>
-                <h3 class="text-title font-semibold text-neutral-900 mb-4">Quick Links</h3>
+                <h3 class="text-title font-semibold text-neutral-900 mb-4">{{ __('messages.footer_quick_links') }}</h3>
                 <ul class="space-y-2">
-                    <li><a href="{{ route('pages.about') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">About</a></li>
-                    <li><a href="{{ route('pages.how-it-works') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">How It Works</a></li>
-                    <li><a href="{{ route('pages.pricing') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">Pricing</a></li>
-                    <li><a href="{{ route('pages.contact') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">Contact</a></li>
+                    <li><a href="{{ route('pages.about') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">{{ __('messages.footer_about') }}</a></li>
+                    <li><a href="{{ route('pages.how-it-works') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">{{ __('messages.footer_how_it_works') }}</a></li>
+                    <li><a href="{{ route('pages.pricing') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">{{ __('messages.footer_pricing') }}</a></li>
+                    <li><a href="{{ route('pages.contact') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">{{ __('messages.footer_contact') }}</a></li>
                 </ul>
             </div>
 
             <div>
-                <h3 class="text-title font-semibold text-neutral-900 mb-4">Legal</h3>
+                <h3 class="text-title font-semibold text-neutral-900 mb-4">{{ __('messages.footer_legal') }}</h3>
                 <ul class="space-y-2">
-                    <li><a href="{{ route('pages.privacy') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">Privacy Policy</a></li>
-                    <li><a href="{{ route('pages.terms') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">Terms of Service</a></li>
-                    <li><a href="{{ route('pages.cookies') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">Cookie Policy</a></li>
+                    <li><a href="{{ route('pages.privacy') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">{{ __('messages.footer_privacy_policy') }}</a></li>
+                    <li><a href="{{ route('pages.terms') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">{{ __('messages.footer_terms_of_service') }}</a></li>
+                    <li><a href="{{ route('pages.cookies') }}" class="text-neutral-600 hover:text-primary-600 text-body-sm transition-colors duration-fast">{{ __('messages.footer_cookie_policy') }}</a></li>
                 </ul>
             </div>
         </div>
@@ -37,7 +37,7 @@
         <div class="pt-8 border-t border-neutral-200">
             <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
                 <p class="text-neutral-500 text-body-sm">
-                    © {{ date('Y') }} Gift Hub. All rights reserved.
+                    {{ __('messages.footer_copyright', ['year' => date('Y')]) }}
                 </p>
 
                 <div class="flex space-x-4">

@@ -8,7 +8,6 @@ class MetadataScraperService
      * Scrape metadata from a given URL.
      *
      * @param string \$url
-     * @return array
      */
     public function scrape(string $url): array
     {
@@ -23,11 +22,11 @@ class MetadataScraperService
             'http' => [
                 'timeout' => 5,
                 'user_agent' => 'Mozilla/5.0 (compatible; MetadataScraper/1.0)',
-            ]
+            ],
         ]);
         $html = @file_get_contents($url, false, $context);
 
-        if (!$html) {
+        if (! $html) {
             return $result;
         }
 
@@ -40,9 +39,9 @@ class MetadataScraperService
         // Suppress warnings for malformed HTML
         libxml_use_internal_errors(true);
         $doc = new \DOMDocument();
-        
+
         // Load HTML with explicit UTF-8 encoding
-        if (!$doc->loadHTML('<?xml encoding="UTF-8">' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD)) {
+        if (! $doc->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD)) {
             return $result;
         }
         libxml_clear_errors();
@@ -83,9 +82,6 @@ class MetadataScraperService
 
     /**
      * Extract price and currency from JSON-LD.
-     *
-     * @param \DOMXPath $xpath
-     * @return array|null
      */
     private function extractJsonLd(\DOMXPath $xpath): ?array
     {
@@ -111,14 +107,12 @@ class MetadataScraperService
                 }
             }
         }
+
         return null;
     }
 
     /**
      * Extract price and currency from Open Graph tags.
-     *
-     * @param \DOMXPath $xpath
-     * @return array|null
      */
     private function extractOpenGraphPrice(\DOMXPath $xpath): ?array
     {
@@ -131,14 +125,12 @@ class MetadataScraperService
                 'currency' => $currency->getAttribute('content'),
             ];
         }
+
         return null;
     }
 
     /**
      * Extract price and currency from Schema.org Microdata.
-     *
-     * @param \DOMXPath $xpath
-     * @return array|null
      */
     private function extractMicrodataPrice(\DOMXPath $xpath): ?array
     {
@@ -156,14 +148,12 @@ class MetadataScraperService
                 'currency' => $currency->textContent,
             ];
         }
+
         return null;
     }
 
     /**
      * Extract price using common XPath patterns as a final fallback.
-     *
-     * @param \DOMXPath $xpath
-     * @return array|null
      */
     private function extractXPathPrice(\DOMXPath $xpath): ?array
     {
@@ -187,6 +177,7 @@ class MetadataScraperService
                     if (preg_match('/(\$|€|£|¥|USD|EUR|GBP|JPY)/i', $priceText, $matches)) {
                         $currency = strtoupper($matches[1]);
                     }
+
                     return [
                         'price' => (float) $price,
                         'currency' => $currency,
@@ -194,6 +185,7 @@ class MetadataScraperService
                 }
             }
         }
+
         return null;
     }
 }

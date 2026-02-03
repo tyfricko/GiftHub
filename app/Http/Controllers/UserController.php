@@ -2,127 +2,107 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\Wishlist;
-use App\Models\UserWishlist;
+use App\Http\Requests\UserProfileUpdateRequest;
 use App\Models\GiftExchangeEvent;
 use App\Models\GiftExchangeParticipant;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use App\Models\User;
+use App\Models\UserWishlist;
+use App\Models\Wishlist;
+use App\Services\UserProfileService;
 
-class UserController extends Controller {
-
-    public function showLoginForm() {
+class UserController extends Controller
+{
+    public function showLoginForm(): \Illuminate\View\View
+    {
         return view('login');
     }
 
-    public function showRegisterForm() {
+    public function showRegisterForm(): \Illuminate\View\View
+    {
         return view('register');
     }
 
-    public function showProfileForm() {
+    public function showProfileForm(): \Illuminate\View\View
+    {
         return view('profile-form');
     }
 
-    public function updateProfile(Request $request) {
+    public function updateProfile(UserProfileUpdateRequest $request): \Illuminate\Http\RedirectResponse
+    {
         $user = auth()->user();
+        $service = new UserProfileService();
+        $service->updateProfile($user, $request->validated());
 
-        $validationRules = [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
-            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048']
-        ];
-
-        // Add password validation only if current password is provided
-        if ($request->filled('current_password')) {
-            $validationRules['current_password'] = ['required', 'current_password'];
-            $validationRules['password'] = ['required', 'min:6', 'confirmed'];
-        }
-
-        $incomingFields = $request->validate($validationRules);
-
-        // Handle avatar upload if provided
-        if ($request->hasFile('avatar')) {
-            // Store the avatar file
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $incomingFields['avatar'] = $avatarPath;
-        }
-
-        // Update password if provided
-        if ($request->filled('password')) {
-            $incomingFields['password'] = bcrypt($request->password);
-        }
-
-        // Update user profile (excluding password fields from mass assignment)
-        $user->update(collect($incomingFields)->except(['current_password', 'password_confirmation'])->toArray());
-
-        return redirect()->route('profile.show', $user)->with('success', 'Profile updated successfully!');
+        return redirect()->route('profile.show', $user)->with('success', 'Profil je bil uspešno posodobljen!');
     }
 
-    public function profile(User $user) {
+    public function profile(User $user): \Illuminate\View\View
+    {
         return $this->showWishlistForUser($user);
     }
-    
-    public function logout() {
+
+    public function logout(): \Illuminate\Http\RedirectResponse
+    {
         auth()->logout();
+
         return redirect('/')->with('success', 'Uspešno ste se odjavili.');
     }
-    
-    public function login(Request $request) {
+
+    public function login(\Illuminate\Http\Request $request): \Illuminate\Http\RedirectResponse
+    {
         $incomingFields = $request->validate([
             'loginusername' => 'required',
-            'loginpassword' => 'required'
+            'loginpassword' => 'required',
         ]);
 
-        if(auth()->attempt(['username' => $incomingFields['loginusername'], 'password' => $incomingFields['loginpassword']])) {
+        if (auth()->attempt(['username' => $incomingFields['loginusername'], 'password' => $incomingFields['loginpassword']])) {
             $request->session()->regenerate();
+
             return redirect('/')->with('success', 'Uspešno ste se prijavili');
         } else {
             return redirect('/')->with('failure', 'Neveljaven vpis');
-        };
-
+        }
     }
 
-    public function register(Request $request) {
-        
+    public function register(\Illuminate\Http\Request $request): \Illuminate\Http\RedirectResponse
+    {
         $incomingFields = $request->validate([
-            'name'      => ['required', 'string', 'max:255'],
-            'username'  => ['required', 'min:3', 'max:20', Rule::unique('users', 'username')],
-            'email'     => ['required', 'email', Rule::unique('users', 'email')],
-            'password'  => ['required', 'min:6', 'confirmed']
-            
+            'name' => ['required', 'string', 'max:255'],
+            'username' => ['required', 'min:3', 'max:20', \Illuminate\Validation\Rule::unique('users', 'username')],
+            'email' => ['required', 'email', \Illuminate\Validation\Rule::unique('users', 'email')],
+            'password' => ['required', 'min:6', 'confirmed'],
+
         ]);
-        
+
         $user = User::create($incomingFields);
-        
+
         // Create a default wishlist for the new user
         $user->getOrCreateDefaultWishlist();
-        
+
         // Send email verification notification
         $user->sendEmailVerificationNotification();
-        
+
         // Log the user in and show a clear verification reminder
         auth()->login($user);
+
         return redirect('/')->with('warning', 'Vaš račun je bil ustvarjen. Preverite svoj e-poštni naslov in potrdite ga, da boste lahko ustvarjali sezname želja in dogodke.');
     }
 
-    public function showCorrectHomepage() {
-
-        if(auth()->check()) {
-
+    public function showCorrectHomepage()
+    {
+        if (auth()->check()) {
             $user = auth()->user();
-            
+
             // If user hasn't verified email, show the simplified homepage with only verification message
-            if (!$user->hasVerifiedEmail()) {
+            if (! $user->hasVerifiedEmail()) {
                 return view('homepage-unverified');
             }
-            
+
             // For verified users, always redirect to their profile wishlist page
             // This ensures they see the welcome message and can start adding items
             return $this->showWishlistForUser($user);
-        
         } else {
-            
+
             return view('homepage-redesigned');
         }
     }
@@ -155,14 +135,15 @@ class UserController extends Controller {
                 'userWishlists.items' => function ($q) {
                     $q->latest();
                 },
-                'wishlistItems'
+                'wishlistItems',
             ]);
 
             $userWishlists = $user->userWishlists;
             $wishes = $user->wishlistItems->sortByDesc('created_at');
-            
+
             // Get pending invitations count for badge (only for own profile)
-            $pendingInvitationsCount = $user->getPendingInvitationsCount();
+            $service = new UserProfileService();
+            $pendingInvitationsCount = $service->getPendingInvitationsCount($user);
         } else {
             // Only show PUBLIC wishlists (and their items) to other users
             $userWishlists = $user->userWishlists()
@@ -179,7 +160,7 @@ class UserController extends Controller {
                 })
                 ->sortByDesc('created_at')
                 ->values();
-                
+
             $pendingInvitationsCount = 0; // Don't show badges on other users' profiles
         }
 
@@ -188,7 +169,7 @@ class UserController extends Controller {
             'userWishlists' => $userWishlists,
             'wishes' => $wishes,
             'pendingInvitationsCount' => $pendingInvitationsCount,
-            'activeTab' => 'wishlists'
+            'activeTab' => 'wishlists',
         ]);
     }
 
@@ -202,10 +183,8 @@ class UserController extends Controller {
      * - counts: array with counts for 'created' and 'participating'
      * - links: array of related routes/links used by the view
      * - activeTab: 'events'
-     *
-     * @return \Illuminate\View\View
      */
-    public function events()
+    public function events(): \Illuminate\View\View
     {
         $user = auth()->user();
 
@@ -221,7 +200,7 @@ class UserController extends Controller {
 
         $counts = [
             'created' => $createdEvents->count(),
-            'participating' => $participatingEvents->count()
+            'participating' => $participatingEvents->count(),
         ];
 
         $links = [
@@ -230,8 +209,9 @@ class UserController extends Controller {
         ];
 
         // Pending invitations for this user's email (may include invitations created before user registered)
-        $pendingInvitations = $user->getPendingInvitations();
-        $pendingInvitationsCount = $user->getPendingInvitationsCount();
+        $service = new UserProfileService();
+        $pendingInvitations = $service->getPendingInvitations($user);
+        $pendingInvitationsCount = $service->getPendingInvitationsCount($user);
 
         return view('profile-events', [
             'user' => $user,
@@ -241,7 +221,7 @@ class UserController extends Controller {
             'links' => $links,
             'pendingInvitations' => $pendingInvitations,
             'pendingInvitationsCount' => $pendingInvitationsCount,
-            'activeTab' => 'events'
+            'activeTab' => 'events',
         ]);
     }
 
@@ -257,10 +237,8 @@ class UserController extends Controller {
      * - requests: Collection
      * - counts: array (following, followers, requests)
      * - activeTab: 'friends'
-     *
-     * @return \Illuminate\View\View
      */
-    public function friends()
+    public function friends(): \Illuminate\View\View
     {
         $user = auth()->user();
 
@@ -272,7 +250,7 @@ class UserController extends Controller {
         $counts = [
             'following' => $following->count(),
             'followers' => $followers->count(),
-            'requests' => $requests->count()
+            'requests' => $requests->count(),
         ];
 
         return view('profile-friends', [
@@ -281,7 +259,7 @@ class UserController extends Controller {
             'followers' => $followers,
             'requests' => $requests,
             'counts' => $counts,
-            'activeTab' => 'friends'
+            'activeTab' => 'friends',
         ]);
     }
 
@@ -292,31 +270,29 @@ class UserController extends Controller {
      * - user: Authenticated User model
      * - settings: array with privacy, notifications, and account defaults
      * - activeTab: 'settings'
-     *
-     * @return \Illuminate\View\View
      */
-    public function settings()
+    public function settings(): \Illuminate\View\View
     {
         $user = auth()->user();
 
         $settings = [
             'privacy' => [
-                'default_wishlist_visibility' => 'public'
+                'default_wishlist_visibility' => 'public',
             ],
             'notifications' => [
                 'email_invitations' => true,
-                'email_assignments' => true
+                'email_assignments' => true,
             ],
             'account' => [
                 'display_name' => $user->name,
-                'avatar' => $user->avatar ?? null
-            ]
+                'avatar' => $user->avatar ?? null,
+            ],
         ];
 
         return view('profile-settings', [
             'user' => $user,
             'settings' => $settings,
-            'activeTab' => 'settings'
+            'activeTab' => 'settings',
         ]);
     }
 }

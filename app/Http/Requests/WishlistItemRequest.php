@@ -23,7 +23,7 @@ class WishlistItemRequest extends FormRequest
     {
         return [
             'itemname' => 'required|string',
-            'url'  => 'required|url',
+            'url' => 'required|url',
             'price' => 'nullable|numeric',
             'description' => 'nullable|string',
             'image_url' => 'nullable|string',

@@ -2,24 +2,26 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Mail\Mailable;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use App\Models\GiftExchangeEvent;
 use App\Models\GiftExchangeParticipant;
 use App\Models\User;
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
 
 class GiftAssignmentNotificationMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $event;
+
     public $giver;
+
     public $recipient;
 
     // Additional data passed to the view
     public $suggestedItem;
+
     public $recipientProfileUrl;
 
     /**
@@ -43,7 +45,7 @@ class GiftAssignmentNotificationMail extends Mailable
                 $itemsQuery = $user->wishlistItems();
 
                 // If event has a budget_max, prefer items within that budget
-                if (!empty($event->budget_max)) {
+                if (! empty($event->budget_max)) {
                     $budgetItems = (clone $itemsQuery)
                         ->whereNotNull('price')
                         ->where('price', '<=', $event->budget_max)

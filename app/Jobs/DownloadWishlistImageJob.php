@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Models\Wishlist;
+use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -9,21 +11,18 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use App\Models\Wishlist;
-use Exception;
 
 class DownloadWishlistImageJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $wishlistId;
+
     protected $imageUrl;
 
     /**
      * Create a new job instance.
      *
-     * @param int $wishlistId
-     * @param string $imageUrl
      * @return void
      */
     public function __construct(int $wishlistId, string $imageUrl)
@@ -42,7 +41,7 @@ class DownloadWishlistImageJob implements ShouldQueue
         try {
             $wishlist = Wishlist::find($this->wishlistId);
 
-            if (!$wishlist) {
+            if (! $wishlist) {
                 // Log or handle the case where the wishlist is not found
                 return;
             }
@@ -53,7 +52,7 @@ class DownloadWishlistImageJob implements ShouldQueue
             }
 
             $extension = pathinfo($this->imageUrl, PATHINFO_EXTENSION);
-            $filename = 'wishlist_images/' . Str::uuid() . '.' . $extension;
+            $filename = 'wishlist_images/'.Str::uuid().'.'.$extension;
 
             Storage::disk('public')->put($filename, $contents);
 
@@ -62,7 +61,7 @@ class DownloadWishlistImageJob implements ShouldQueue
 
         } catch (Exception $e) {
             // Log the error, e.g., to Laravel's default log
-            \Log::error("Error downloading image for wishlist ID {$this->wishlistId}: " . $e->getMessage());
+            \Log::error("Error downloading image for wishlist ID {$this->wishlistId}: ".$e->getMessage());
         }
     }
 }

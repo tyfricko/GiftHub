@@ -10,11 +10,13 @@
 ])
 
 @php
-    $baseClasses = 'rounded-lg font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-accent-600 transition-colors duration-150 inline-flex items-center justify-center';
+    $baseClasses = 'rounded-lg font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-accent-600 focus:ring-offset-2 transition-colors duration-150 inline-flex items-center justify-center';
     $variantClasses = match($variant) {
-        'primary' => 'bg-primary-600 text-white hover:bg-primary-700 disabled:bg-neutral-400 disabled:text-neutral-100',
-        'danger' => 'bg-red-600 text-white hover:bg-red-700 disabled:bg-neutral-400 disabled:text-neutral-100',
-        default => 'bg-white border border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white disabled:border-neutral-300 disabled:text-neutral-400 disabled:bg-transparent'
+        'primary' => 'bg-primary-600 text-white hover:bg-primary-700 disabled:bg-neutral-400 disabled:text-neutral-100 dark:bg-primary-600 dark:text-white dark:hover:bg-primary-700 dark:disabled:bg-neutral-600 dark:disabled:text-neutral-400',
+        'secondary' => 'bg-white border border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white disabled:border-neutral-300 disabled:text-neutral-400 disabled:bg-transparent dark:bg-neutral-800 dark:border-primary-500 dark:text-primary-400 dark:hover:bg-primary-600 dark:hover:text-white dark:disabled:border-neutral-600 dark:disabled:text-neutral-500',
+        'danger' => 'bg-red-600 text-white hover:bg-red-700 disabled:bg-neutral-400 disabled:text-neutral-100 dark:bg-red-600 dark:text-white dark:hover:bg-red-700 dark:disabled:bg-neutral-600 dark:disabled:text-neutral-400',
+        'ghost' => 'bg-transparent text-neutral-700 hover:bg-neutral-100 disabled:text-neutral-400 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:disabled:text-neutral-500',
+        default => 'bg-white border border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white disabled:border-neutral-300 disabled:text-neutral-400 disabled:bg-transparent dark:bg-neutral-800 dark:border-primary-500 dark:text-primary-400 dark:hover:bg-primary-600 dark:hover:text-white dark:disabled:border-neutral-600 dark:disabled:text-neutral-500'
     };
     $sizeClasses = match($size) {
         'sm' => 'px-3 py-1 text-sm',

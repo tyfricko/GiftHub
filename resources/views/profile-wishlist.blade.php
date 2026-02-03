@@ -1,7 +1,7 @@
 @extends('components.layout')
 
 @section('content')
-<div class="container mx-auto px-6">
+<div class="container mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Profile Header -->
     @php
         $isOwnProfile = (auth()->check() && auth()->user()->id === $user->id);
@@ -13,13 +13,13 @@
     />
     
     <!-- Page Title and Intro -->
-    <div class="mt-6 mb-6">
+    <div class="mt-4 sm:mt-6 mb-4 sm:mb-6">
        @if($isOwnProfile)
-           <h1 class="text-3xl lg:text-4xl font-extrabold text-neutral-900">Welcome, {{ $user->fullname ?? $user->username }}!</h1>
-           <p class="text-body text-neutral-600 mt-2">This is your personal space to manage your wishlists and gift exchanges.</p>
+           <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-neutral-900 dark:text-white">{{ __('messages.welcome_message', ['name' => $user->fullname ?? $user->username]) }}</h1>
+           <p class="text-sm sm:text-body text-neutral-600 dark:text-neutral-400 mt-2">{{ __('messages.profile_description') }}</p>
        @else
-           <h1 class="text-3xl lg:text-4xl font-extrabold text-neutral-900">{{ $user->username }}'s Wishlist</h1>
-           <p class="text-body text-neutral-600 mt-2">You are viewing the public wishlist of {{ $user->username }}.</p>
+           <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-neutral-900 dark:text-white">{{ __('messages.user_wishlist_title', ['username' => $user->username]) }}</h1>
+           <p class="text-sm sm:text-body text-neutral-600 dark:text-neutral-400 mt-2">{{ __('messages.viewing_public_wishlist', ['username' => $user->username]) }}</p>
        @endif
     </div>
 
@@ -27,8 +27,8 @@
     @if($isOwnProfile)
     @php
         $profileTabs = [
-            ['key' => 'wishlists', 'label' => 'My Wishlist', 'url' => route('profile.wishlist')],
-            ['key' => 'events',    'label' => 'My Events',   'url' => route('profile.events'), 'badge' => $pendingInvitationsCount ?? 0],
+            ['key' => 'wishlists', 'label' => __('messages.my_wishlist'), 'url' => route('profile.wishlist')],
+            ['key' => 'events',    'label' => __('messages.my_events'),   'url' => route('profile.events'), 'badge' => $pendingInvitationsCount ?? 0],
         ];
     @endphp
     <x-ui.tabs :tabs="$profileTabs" :active="$activeTab ?? 'wishlists'" />
@@ -36,26 +36,26 @@
 
     <!-- Toolbar -->
     @if($isOwnProfile)
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-semibold text-neutral-900">My Wishlist</h2>
-        <div class="flex items-center space-x-3">
-            <button class="inline-flex items-center px-4 py-2 rounded-md bg-neutral-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 focus:outline-none" data-modal-target="create-wishlist-modal">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-6">
+        <h2 class="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white">{{ __('messages.my_wishlist') }}</h2>
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:space-x-3 w-full sm:w-auto">
+            <button class="inline-flex items-center justify-center px-4 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none min-h-[44px]" data-modal-target="create-wishlist-modal">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Create New Wishlist
+                <span class="hidden sm:inline">{{ __('messages.create_new_wishlist') }}</span>
             </button>
-            <button class="inline-flex items-center px-4 py-2 rounded-md bg-neutral-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 focus:outline-none">
+            <button class="inline-flex items-center justify-center px-4 py-2 rounded-md bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none min-h-[44px]">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                Get Gift Ideas
+                <span class="hidden sm:inline">{{ __('messages.get_gift_ideas') }}</span>
             </button>
-            <a href="/add-wish" class="inline-flex items-center px-4 py-2 rounded-md bg-primary-600 text-white hover:bg-primary-700 focus:outline-none">
+            <a href="/add-wish" class="inline-flex items-center justify-center px-4 py-2 rounded-md bg-primary-600 dark:bg-primary-600 text-white hover:bg-primary-700 dark:hover:bg-primary-700 focus:outline-none min-h-[44px]">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Add Item
+                {{ __('messages.add_item') }}
             </a>
         </div>
     </div>
     @else
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-semibold text-neutral-900">{{ $user->username }}'s Public Wishlists</h2>
+        <h2 class="text-xl sm:text-2xl font-semibold text-neutral-900 dark:text-white">{{ __('messages.public_wishlists', ['username' => $user->username]) }}</h2>
     </div>
     @endif
 
@@ -66,16 +66,16 @@
                 <x-ui.wishlist-group-card :wishlist="$wishlist" :canEdit="$isOwnProfile" />
             @endforeach
         @else
-            <x-ui.card class="text-center py-12">
-                <div class="text-neutral-600">
-                    <i class="fa fa-gift text-4xl mb-4 block" aria-hidden="true"></i>
+            <x-ui.card class="text-center py-8 sm:py-12">
+                <div class="text-neutral-600 dark:text-neutral-400">
+                    <i class="fa fa-gift text-3xl sm:text-4xl mb-4 block" aria-hidden="true"></i>
                     @if($isOwnProfile)
-                        <h3 class="text-subheadline font-semibold mb-2">No wishlists found</h3>
-                        <p class="text-body mb-4">You don't have any wishlists yet. Create your first wishlist to get started.</p>
-                        <a href="/add-wish" class="inline-flex items-center px-4 py-2 rounded-md bg-primary-600 text-white">Create Wishlist</a>
+                        <h3 class="text-lg sm:text-subheadline font-semibold mb-2 text-neutral-900 dark:text-white">{{ __('messages.no_wishlists_found') }}</h3>
+                        <p class="text-sm sm:text-body mb-4">{{ __('messages.no_wishlists_desc') }}</p>
+                        <a href="/add-wish" class="inline-flex items-center justify-center px-4 py-2 rounded-md bg-primary-600 dark:bg-primary-600 text-white min-h-[44px]">{{ __('messages.create_wishlist') }}</a>
                     @else
-                        <h3 class="text-subheadline font-semibold mb-2">No public wishlists</h3>
-                        <p class="text-body mb-1">{{ $user->username }} has not published any wishlists yet.</p>
+                        <h3 class="text-lg sm:text-subheadline font-semibold mb-2 text-neutral-900 dark:text-white">{{ __('messages.no_public_wishlists') }}</h3>
+                        <p class="text-sm sm:text-body mb-1">{{ __('messages.no_public_wishlists_desc', ['username' => $user->username]) }}</p>
                     @endif
                 </div>
             </x-ui.card>
@@ -142,7 +142,7 @@
                 const wishlistId = this.dataset.wishlistId;
                 const wishlistName = this.dataset.wishlistName;
 
-                if (confirm(`Are you sure you want to delete the wishlist "${wishlistName}"? This action cannot be undone.`)) {
+                if (confirm(`{{ __('messages.confirm_delete_wishlist', ['name' => '${wishlistName}']) }}`)) {
                     try {
                         console.log(`Attempting to delete wishlist: ${wishlistId} - ${wishlistName}`);
                         
@@ -181,7 +181,7 @@
 
         // Global function for wishlist item deletion (called from wishlist-item-card component)
         window.deleteWishlistItem = async function(itemId, itemName) {
-            if (confirm(`Are you sure you want to delete "${itemName}"? This action cannot be undone.`)) {
+            if (confirm(`{{ __('messages.confirm_delete_item', ['name' => '${itemName}']) }}`)) {
                 try {
                     console.log(`Attempting to delete wishlist item: ${itemId} - ${itemName}`);
                     

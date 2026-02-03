@@ -1,11 +1,11 @@
-<![CDATA[<!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>{{ $title ?? 'GiftHub' }}</title>
-    <meta name="description" content="{{ $description ?? 'Organize Secret Santa exchanges, create shareable wishlists, and make every occasion special.' }}" />
+    <title>{{ $title ?? __('messages.app_name') }}</title>
+    <meta name="description" content="{{ $description ?? __('messages.app_description') }}" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -59,4 +59,3 @@
 
   </body>
 </html>
-]]>
